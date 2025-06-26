@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>File Processor</title>
+    <link rel="stylesheet" href="UsersUXStyle.css">
+    <script src="UsersUXScripts.js"></script>
+</head>
+
+<body>
+    <div class="block">
+        <h2>Ввод MatchAndPatch</h2>
+        <div class="mode-buttons">
+            <button id="Match-auto" class="active" onclick="switchMode('Match', 'auto')">Load File</button>
+            <button id="Match-manual" class="inactive" onclick="switchMode('Match', 'manual')">Manual Input</button>
+        </div>
+        <div id="Match-file" class="file-input">
+
+            <input type="file" id="Match-file-input">
+        </div>
+        <div id="Match-manual-text" class="manual-input" style="display: none;">
+            <textarea id="Match-text" placeholder="Enter content for Input 1"></textarea>
+        </div>
+    </div>
+
+    <div class="block">
+        <h2>Ввод исходного кода</h2>
+        <div class="mode-buttons">
+            <button id="SourceCode-auto" class="active" onclick="switchMode('SourceCode', 'auto')">Load File</button>
+            <button id="SourceCode-manual" class="inactive" onclick="switchMode('SourceCode', 'manual')">Manual Input</button>
+        </div>
+        <div id="SourceCode-file" class="file-input">
+            <input type="file" id="SourceCode-file-input">
+        </div>
+        <div id="SourceCode-manual-text" class="manual-input" style="display: none;">
+            <textarea id="SourceCode-text" placeholder="Enter content for Input 2"></textarea>
+            <select id="SourceCode-manual-select">
+                <option value="python">python</option>
+                <option value="java">java</option>
+                <option value="cpp">c++</option>
+                <option value="c">c</option>
+                <option value="csharp">c#</option>
+                <option value="javascript">javascript</option>
+                <option value="ruby">ruby</option>
+                <option value="typescript">typescript</option>
+                <option value="go">go</option>
+                <option value="rust">rust</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="block">
+        <button id="apply-button" onclick="apply()">Применить</button>
+    </div>
+</body>
+
+</html>

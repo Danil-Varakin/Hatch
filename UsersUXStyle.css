@@ -1,0 +1,65 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f0f0;
+    margin: 20px;
+    color: #1F1F1F;
+}
+
+.block {
+    background-color: #FFFFFF;
+    padding: 15px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.mode-buttons button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.mode-buttons .active {
+    background-color: #007AFF;
+    color: white;
+}
+
+.mode-buttons .inactive {
+    background-color: #CCCCCC;
+    color: #1F1F1F;
+}
+
+.file-input,
+.manual-input {
+    margin-top: 10px;
+}
+
+.file-input input[type="file"] {
+    padding: 10px;
+}
+
+.manual-input textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #CCCCCC;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background-color: #F7F7F7;
+}
+
+#apply-button {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    background-color: #007AFF;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+    margin: 20px auto 0 auto;
+}
