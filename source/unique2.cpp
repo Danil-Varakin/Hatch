@@ -7,5 +7,8 @@ void compute_sum(int n) {
     for (int i = 0; i < n; i++) {
         total += i;
     }
+    for (int i = 0; i < n; i++) {
+        total += i;
+    }
     std::cout << "Total sum: " << total << std::endl;
 }

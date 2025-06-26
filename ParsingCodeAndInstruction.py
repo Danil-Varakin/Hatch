@@ -19,10 +19,10 @@ def ReadLine(FilePath):
         return f"Ошибка: файл {FilePath} не найден"
 
 
-def WriteLine(FilePath, ResultLines):
+def WriteFile(FilePath, Result):
     try:
         with open(FilePath, 'w', encoding='utf-8') as file:
-            return file.writelines(ResultLines)
+            file.write(Result)
     except FileNotFoundError:
         return f"Ошибка: файл {FilePath} не найден"
 

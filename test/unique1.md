@@ -8,6 +8,8 @@ std::vector<int> values
 >>>
 std::cout << "Processing values"
 ...
+}
+...
 ```
 
 ### patch
