@@ -1,64 +1,83 @@
-import os
-from ParsingCodeAndInstruction import ReceivingMatchOrPatchOrSourceCodeFromListUI, MatchLoadFromString, PatchLoadFromString
+from ParsingCodeAndInstruction import ReceivingMatchOrPatchOrSourceCodeFromList
 from TokenizeCode import  CheckAndRunTokenize
-from SearchCode import SearchInsertIndexInTokenList, InsertNestingLevel, SearchInsertIndexInSourseCode, CheckMatchNestingMarkerPairs, MatchNestingLevelInsertALL
-from Insert import Insert
+from SearchCode import SearchInsertIndexInSourseCode
+import pytest
+from pathlib import Path
+import glob
 
-TestFolder = "test"
-SourceFolder = "source"
-results = []
-TestFiles = [f for f in os.listdir(TestFolder) if f.endswith(".md")]
-SourceFiles = [f for f in os.listdir(SourceFolder) if f.endswith(".cpp")]
-print(TestFiles,SourceFiles)
-pairs = []
 
-for TestFile in TestFiles:
-    BaseName = os.path.splitext(TestFile)[0]
-    SourceFile = f"{BaseName}.cpp"
-    if SourceFile in SourceFiles:
-        pairs.append((os.path.join(TestFolder, TestFile), os.path.join(SourceFolder, SourceFile)))
-i = 0
-# ListOfCodeAndInstructionAndLanguage - List of [matchContent, matchType, sourceContent, sourceType, sourceLanguage]
-for TestPath, SourcePath in pairs:
-    i += 1
-    base_name = os.path.splitext(os.path.basename(TestPath))[0]
-    print(f"\n=== Processing files: {TestPath} and {SourcePath} ===")
-    ListOfCodeAndInstructionAndLanguage = [TestPath, "file", SourcePath, "file", "cpp"]
-    Language = ListOfCodeAndInstructionAndLanguage[4]
+TEST_DIR = Path("test")
+PASSED_DIR = TEST_DIR / "PassedTests"
+FAILED_DIR = TEST_DIR / "FailedTests"
 
-    Match = ReceivingMatchOrPatchOrSourceCodeFromListUI(ListOfCodeAndInstructionAndLanguage, True, MatchLoadFromString)
-    Patch = ReceivingMatchOrPatchOrSourceCodeFromListUI(ListOfCodeAndInstructionAndLanguage, True, PatchLoadFromString)
-    SourceCode = ReceivingMatchOrPatchOrSourceCodeFromListUI(ListOfCodeAndInstructionAndLanguage, False)
-    Match = CheckAndRunTokenize(Match, Language)
-    SourceCode = CheckAndRunTokenize(SourceCode, Language)
-    SearchDictionary = SearchInsertIndexInTokenList(Match, SourceCode)
-    NestingLevel = InsertNestingLevel(Match)
-    MatchL = InsertNestingLevel(Match)
-    InsertIndexInSourseCode = SearchInsertIndexInSourseCode(Match, SourceCode)
-    NestingMap = MatchNestingLevelInsertALL(Match)
-    IsNestingMarkerPairsList = CheckMatchNestingMarkerPairs(Match)
-    Insert(Match, Patch, SourceCode, SourcePath, F'C:/Users/droby/Documents/GitHub/Hatch/source/result{i}.cpp')
 
-    ResultTuple = (
-        Match,
-        SourceCode,
-        NestingMap,
-        MatchL,
-        SearchDictionary,
-        len(SourceCode) - 1,
-        InsertIndexInSourseCode,
-        base_name
-    )
-    results.append(ResultTuple)
+def GetFilePairs(directory):
+    MdFiles = glob.glob(str(directory / "*.md"))
+    Pairs = []
+    for MdFile in MdFiles:
+        BaseName = Path(MdFile).stem
+        CppFile = directory / f"{BaseName}.cpp"
+        if CppFile.exists():
+            Pairs.append((MdFile, str(CppFile)))
+    return Pairs
 
-print("=== All Processing Results ===")
-for result in results:
-    Match, SourceCode, NestingMap, MatchL, SearchDictionary, source_len, InsertIndexInSourseCode, base_name = result
-    print(f"\n=== Results for {base_name} ===")
-    print(f"Match nesting map: {NestingMap}")
-    print(f"Match nesting: {MatchL}")
-    print(f"Insert index in sourcecode TokenList: {SearchDictionary}")
-    print(f"Source code TokenList len: {source_len}")
-    print(f"Insert index in source code: {InsertIndexInSourseCode}")
-    print(f"=== End results for {base_name} ===\n")
-print("=== End of All Results ===")
+
+
+EXPECTED_PASSED_RESULTS = {
+    "unique1": 0,
+    "unique2": 0,
+    "unique3": ['Prev', 2, ')'],
+    "unique5": ['Prev', 1, 'register'],
+    "unique6": ['Prev', 7, '}'],
+    "unique7": ['Next', 7, '}'],
+    "unique8": ['Next', 1, 'register'],
+    "unique9": 0,
+    "unique10": ['Next', 1, '}'],
+    "unique11": ['Next', 52, '}']
+
+
+
+}
+
+PassedTestFiles = GetFilePairs(PASSED_DIR)
+FailedTestFiles = GetFilePairs(FAILED_DIR)
+
+
+@pytest.mark.parametrize("TestPath, SourcePath", PassedTestFiles)
+def testPassedCases(TestPath, SourcePath):
+    language = "cpp"
+
+    match = ReceivingMatchOrPatchOrSourceCodeFromList(TestPath, 'Match')
+    patch = ReceivingMatchOrPatchOrSourceCodeFromList(TestPath, 'Patch')
+    SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(SourcePath, 'SourceCode')
+
+    match = CheckAndRunTokenize(match, language)
+    SourceCode = CheckAndRunTokenize(SourceCode, language)
+
+    result = SearchInsertIndexInSourseCode(match, SourceCode)
+
+    BaseName = Path(TestPath).stem
+
+    assert BaseName in EXPECTED_PASSED_RESULTS, f"Test failed for {TestPath}: No expected result defined in EXPECTED_PASSED_RESULTS"
+
+    ExpectedResult = EXPECTED_PASSED_RESULTS[BaseName]
+
+    assert isinstance(result, list), f"Test failed for {TestPath}: Expected a list, got {type(result)}"
+    assert len(result) == 3, f"Test failed for {TestPath}: Expected list of length 3, got {len(result)}"
+    assert result == ExpectedResult, f"Test failed for {TestPath}: Expected {ExpectedResult}, got {result}"
+
+
+@pytest.mark.parametrize("TestPath, SourcePath", FailedTestFiles)
+def testFailedCases(TestPath, SourcePath):
+    language = "cpp"
+
+    match = ReceivingMatchOrPatchOrSourceCodeFromList(TestPath, 'Match')
+    patch = ReceivingMatchOrPatchOrSourceCodeFromList(TestPath, 'Patch')
+    SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(SourcePath, 'SourceCode')
+
+    match = CheckAndRunTokenize(match, language)
+    SourceCode = CheckAndRunTokenize(SourceCode, language)
+
+    result = SearchInsertIndexInSourseCode(match, SourceCode)
+
+    assert result == 0, f"Test failed for {TestPath}: Expected 0, got {result}"

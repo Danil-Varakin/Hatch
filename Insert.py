@@ -29,5 +29,5 @@ def Insert(Match, Patch, SourceCode, SourcePath, OutPath, add_newline=True):
         modified_content = source_content[:char_position + len(search_string)] + patch_text + source_content[char_position + len(search_string):]
     else:
         return 0
-    WriteFile(modified_content)
+    WriteFile(OutPath, modified_content)
     return 1

@@ -40,7 +40,7 @@ def DetectProgrammingLanguage(FileNameSourceCode):
     '.py': 'python', '.java': 'java', '.cpp': 'cpp',
     '.c': 'c', '.cs': 'csharp', '.js': 'javascript',
     '.rb': 'ruby', '.ts': 'typescript', '.go': 'go',
-    '.rs': ' ', '.md': 'markdown' }
+    '.rs': ' ', '.md': 'markdown', '.cc': 'cpp' }
     ext = os.path.splitext(FileNameSourceCode)[1].lower()
     return extensions.get(ext, 'Неизвестный язык')
 

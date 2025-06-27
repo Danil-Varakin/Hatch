@@ -3,11 +3,10 @@
 ### match:
 ```
 ...
-void f(...) {
+class BraveSearchTestEnabled : public BraveSearchTest {
 ...
-register
 >>>
-
+};
 
 ...
 ```
