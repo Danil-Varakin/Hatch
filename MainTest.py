@@ -33,8 +33,13 @@ EXPECTED_PASSED_RESULTS = {
     "unique8": ['Next', 1, 'register'],
     "unique9": 0,
     "unique10": ['Next', 1, '}'],
-    "unique11": ['Next', 52, '}']
-
+    "unique11": ['Next', 52, '}'],
+    "unique12": ['Prev', 18, ')'],
+    "unique13": ['Next', 31, '}'],
+    "unique14": ['Next', 3, '}'],
+    "unique15": ['Next', 19, '}'],
+    "unique16": ['Next', 1, 'kDesktopPWAsTabStripSettings'],
+    "unique17": ['Prev', 17, 'endif'],
 
 
 }
