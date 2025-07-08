@@ -2,13 +2,14 @@ import re
 
 def TokenizeCode(CodeString: str, Language: str):
     if Language not in ["python", "yaml"]:
-        return ''.join(CodeString.split())
+       return CodeString.replace(" ", "").replace("\n", "").replace("\t", "")
+
     else:
         lines = CodeString.splitlines()
         ProcessedLines = []
         for line in lines:
             LeadingSpaces = len(line) - len(line.lstrip(' '))
-            StrippedLine = line.strip().replace(' ', '')
+            StrippedLine = line.strip()
             ProcessedLine = ' ' * LeadingSpaces + StrippedLine
             ProcessedLines.append(ProcessedLine)
         return ''.join(ProcessedLines)
@@ -57,18 +58,19 @@ def FindSpecialOperatorsWithLanguage(CodeString: str, language: str):
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixesList: list):
     TokensList = []
     PositionInCodeString = 0
-
     for i in OperatorIndixesList + [len(CodeString)]:
+        Token = CodeString[PositionInCodeString:i]
         if i > PositionInCodeString:
-            TokensList.append(TokenizeCode(CodeString[PositionInCodeString:i], language))
+            Token = TokenizeCode(Token, language)
+            if len(Token) > 0:
+                TokensList.append(Token)
         if i < len(CodeString):
             if CodeString[i: i + 3] in ["...", ">>>", "<<<"]:
                 TokensList.append(CodeString[i : i + 3])
                 PositionInCodeString = i + 3
-            else:
+            elif CodeString[i] in ["}", ")", "]", "{", "(", "["]:
                 TokensList.append(CodeString[i])
                 PositionInCodeString = i + 1
-
     return TokensList
 
 
