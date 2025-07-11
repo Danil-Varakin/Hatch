@@ -33,7 +33,10 @@ def MatchLoadFromString(StringOfMarkdownContent):
 
 def PatchLoadFromString(StringOfMarkdownContent):
     patch = re.search(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
-    return patch.group(1).strip() if patch else None
+    patch = patch.group(1)
+    if patch:
+        return  patch[1:] if patch.startswith('\n') else None
+
 
 def DetectProgrammingLanguage(FileNameSourceCode):
     extensions = {

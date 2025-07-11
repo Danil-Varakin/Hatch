@@ -1,9 +1,9 @@
-from SearchCode import SearchInsertIndexInSourseCode
+from SearchCode import SearchInsertIndexInSourceCode
 from ParsingCodeAndInstruction import ReadFile, WriteFile
 
 
 def Insert(Match, Patch, SourceCode, SourcePath, OutPath):
-    SearchResult = SearchInsertIndexInSourseCode(Match, SourceCode)
+    SearchResult = SearchInsertIndexInSourceCode(Match, SourceCode)
     if not SearchResult:
         return 0
     position, count, SearchString = SearchResult
