@@ -2,6 +2,7 @@ import os
 import re
 from typing import Optional
 from typing import Literal
+from constants import EXTENSIONS_FILE
 
 def ReadFile(FilePath):
     try:
@@ -39,13 +40,8 @@ def PatchLoadFromString(StringOfMarkdownContent):
 
 
 def DetectProgrammingLanguage(FileNameSourceCode):
-    extensions = {
-    '.py': 'python', '.java': 'java', '.cpp': 'cpp',
-    '.c': 'c', '.cs': 'csharp', '.js': 'javascript',
-    '.rb': 'ruby', '.ts': 'typescript', '.go': 'go',
-    '.rs': ' ', '.md': 'markdown', '.cc': 'cpp' }
     ext = os.path.splitext(FileNameSourceCode)[1].lower()
-    return extensions.get(ext, 'Неизвестный язык')
+    return EXTENSIONS_FILE.get(ext, 'Неизвестный язык')
 
 def ReceivingMatchOrPatchOrSourceCodeFromListUI(ListOfCodeAndInstructionAndLanguage,IsInstruction, functionMatchOrPatch: Optional = None):
     if IsInstruction:

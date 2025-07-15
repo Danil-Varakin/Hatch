@@ -1,7 +1,7 @@
 import re
-
+from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, C_STYLE_LANGUAGES_COMMENT, SCRIPT_STYLE_LANGUAGES_COMMENT, NESTING_MARKERS
 def TokenizeCode(CodeString: str, Language: str):
-    if Language not in ["python", "yaml"]:
+    if Language not in TAB_DEPENDENT_LANGUAGES:
        return CodeString.replace(" ", "").replace("\n", "").replace("\t", "")
 
     else:
@@ -15,44 +15,29 @@ def TokenizeCode(CodeString: str, Language: str):
         return ''.join(ProcessedLines)
 
 def FindSpecialOperatorIndixes(CodeString: str, CommentPattern: str, Language: str):
-    ReComments = [
-        (m.start(), m.end())
-        for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)
-    ]
-    ReStrings = [
-        (m.start(), m.end())
-        for m in re.finditer(
-            r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\'',
-            CodeString,
-            re.DOTALL,
-        )
-    ]
+    ReComments = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
+    ReStrings = [(m.start(), m.end()) for m in re.finditer(r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\'', CodeString, re.DOTALL)]
     patterns = r"(\.\.\.|>>>|<<<|\(|\)|\[|\]|\{|\})"
-    if Language in ["python", "yaml"]:
+    if Language in TAB_DEPENDENT_LANGUAGES:
         patterns = r"(\.\.\.|>>>|<<<|\(|\)|\[|\]|\{|\}| )"
     ReMatches = re.finditer(patterns, CodeString)
     OperatorIndexesList = []
 
     for ReMatch in ReMatches:
         ReOperatorStart = ReMatch.start()
-        if not any(
-                start <= ReOperatorStart < end for start, end in ReComments + ReStrings
-        ):
+        if not any(start <= ReOperatorStart < end for start, end in ReComments + ReStrings):
             OperatorIndexesList.append(ReOperatorStart)
-
     return OperatorIndexesList
 
 
 def FindSpecialOperatorsWithLanguage(CodeString: str, language: str):
-    CStyleLanguages = ["cpp", "js", "java", "typescript", "c", "c#", "rust", "go"]
-    ScriptStyleLanguages = ["python", "ruby"]
     CStyleCommentPattern = r"//.*?$|/\*.*?\*/"
     ScriptStyleCommentPattern = r"#.*?$|=begin.*?=end"
-
-    if language in CStyleLanguages:
+    if language in C_STYLE_LANGUAGES_COMMENT:
         return FindSpecialOperatorIndixes(CodeString, CStyleCommentPattern, language)
-    elif language in ScriptStyleLanguages:
+    elif language in SCRIPT_STYLE_LANGUAGES_COMMENT:
         return FindSpecialOperatorIndixes(CodeString, ScriptStyleCommentPattern, language)
+    return None
 
 
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixesList: list):
@@ -65,10 +50,10 @@ def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixes
             if len(Token) > 0:
                 TokensList.append(Token)
         if i < len(CodeString):
-            if CodeString[i: i + 3] in ["...", ">>>", "<<<"]:
+            if CodeString[i: i + 3] in SPECIAL_OPERATORS:
                 TokensList.append(CodeString[i : i + 3])
                 PositionInCodeString = i + 3
-            elif CodeString[i] in ["}", ")", "]", "{", "(", "["]:
+            elif CodeString[i] in NESTING_MARKERS:
                 TokensList.append(CodeString[i])
                 PositionInCodeString = i + 1
     return TokensList
