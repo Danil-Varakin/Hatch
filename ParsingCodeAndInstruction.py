@@ -36,7 +36,9 @@ def PatchLoadFromString(StringOfMarkdownContent):
     patch = re.search(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
     patch = patch.group(1)
     if patch:
-        return  patch[1:] if patch.startswith('\n') else None
+        if patch.startswith('\n'):
+            patch = patch[1:]
+        return  patch[:len(patch) - 1] if patch[len(patch) -1] == '\n' else patch
 
 
 def DetectProgrammingLanguage(FileNameSourceCode):

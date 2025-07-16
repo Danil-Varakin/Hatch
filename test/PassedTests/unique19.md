@@ -3,10 +3,9 @@
 ### match:
 ```
 ...
-void f(...) {
+ void f (>>> ...) <<< { 
 ...
-
->>> register
+}
 
 ...
 ```
@@ -14,6 +13,6 @@ void f(...) {
 ### patch
 
 ```
-print("[INFO]: ") 
+print("[INFO]: ")
 ```
 

@@ -1,199 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="3bbd8ca1-7cbf-4558-a453-e4a2aa024a41" name="Changes" comment="В SearchCode.py дописаны функциии: IsPass, SearchInsertIndexInTokenList, ComparisonToken, IsInsert, SearchInsertIndexInSourceCode, FindAllSubstringEnds под новую логику токенизации.&#10;В  MainTest.py написана функция testAdditionalCases для тестировки SearchInsertIndexInTokenList.&#10;В ParsingCodeAndInstruction.py исправлена ошибка обрезки строки  в функции PatchLoadFromString">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainOt.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainOt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParsingCodeAndInstruction.py" beforeDir="false" afterPath="$PROJECT_DIR$/ParsingCodeAndInstruction.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SearchCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/SearchCode.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TokenizeCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/TokenizeCode.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique7.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique7.md" afterDir="false" />
-    </list>
+    <list default="true" id="d0f8d31b-d6f9-44aa-8c21-c7a301edc5c3" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;Danil-Varakin&quot;
-  }
-}</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/Danil-Varakin/Hatch.git&quot;,
-    &quot;accountId&quot;: &quot;46dd988c-174f-40f1-a567-45679d712c09&quot;
-  }
-}</component>
-  <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 0
-}</component>
-  <component name="ProjectId" id="2zZvVlq09i6Jhiy8jCWJVLCztfy" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 0
+}]]></component>
+  <component name="ProjectId" id="2zwKqQxwS5fm2pB1eqEIJvIYNaj" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.MainOt.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.MainTest.executor&quot;: &quot;Run&quot;,
-    &quot;Python.SearchCode.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true"
   }
-}</component>
-  <component name="RunManager" selected="Python.MainOt">
-    <configuration name="MainOt" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-      <module name="Hatch" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.13 (Proga)" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MainOt.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="MainTest" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-      <module name="Proga" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.13 (Proga)" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MainTest.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <list>
-      <item itemvalue="Python.MainOt" />
-      <item itemvalue="Python.MainTest" />
-    </list>
-  </component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PY-251.26927.74" />
-        <option value="bundled-python-sdk-657d8234b839-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.74" />
+        <option value="bundled-python-sdk-d7ad00fb9fc3-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23726.102" />
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="3bbd8ca1-7cbf-4558-a453-e4a2aa024a41" name="Changes" comment="" />
-      <created>1751951435400</created>
+      <changelist id="d0f8d31b-d6f9-44aa-8c21-c7a301edc5c3" name="Changes" comment="" />
+      <created>1752636886246</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1751951435400</updated>
-      <workItem from="1751951436570" duration="1515000" />
-      <workItem from="1752552080920" duration="21547000" />
-      <workItem from="1752576518398" duration="5020000" />
+      <updated>1752636886246</updated>
     </task>
-    <task id="LOCAL-00001" summary="В SearchCode.py дописаны функциии: IsPass, SearchInsertIndexInTokenList, ComparisonToken, IsInsert, SearchInsertIndexInSourceCode, FindAllSubstringEnds под новую логику токенизации.&#10;В  MainTest.py написана функция testAdditionalCases для тестировки SearchInsertIndexInTokenList.&#10;В ParsingCodeAndInstruction.py исправлена ошибка обрезки строки  в функции PatchLoadFromString">
-      <option name="closed" value="true" />
-      <created>1752212269044</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1752212269044</updated>
-    </task>
-    <option name="localTasksCounter" value="2" />
     <servers />
-  </component>
-  <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="3" />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="В SearchCode.py дописаны функциии: IsPass, SearchInsertIndexInTokenList, ComparisonToken, IsInsert, SearchInsertIndexInSourceCode, FindAllSubstringEnds под новую логику токенизации.&#10;В  MainTest.py написана функция testAdditionalCases для тестировки SearchInsertIndexInTokenList.&#10;В ParsingCodeAndInstruction.py исправлена ошибка обрезки строки  в функции PatchLoadFromString" />
-    <option name="LAST_COMMIT_MESSAGE" value="В SearchCode.py дописаны функциии: IsPass, SearchInsertIndexInTokenList, ComparisonToken, IsInsert, SearchInsertIndexInSourceCode, FindAllSubstringEnds под новую логику токенизации.&#10;В  MainTest.py написана функция testAdditionalCases для тестировки SearchInsertIndexInTokenList.&#10;В ParsingCodeAndInstruction.py исправлена ошибка обрезки строки  в функции PatchLoadFromString" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/SearchCode.py</url>
-          <line>8</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-      </breakpoints>
-      <default-breakpoints>
-        <breakpoint type="python-exception">
-          <properties notifyOnTerminate="true" exception="BaseException">
-            <option name="notifyOnTerminate" value="true" />
-          </properties>
-        </breakpoint>
-      </default-breakpoints>
-    </breakpoint-manager>
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="MatchTokenList" />
-        <watch expression="MatchTokenIndex" />
-      </configuration>
-    </watches-manager>
-  </component>
-  <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Proga$SearchCode.coverage" NAME="SearchCode Coverage Results" MODIFIED="1752575978637" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Proga$MainOt.coverage" NAME="MainOt Coverage Results" MODIFIED="1752585156737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
   </component>
 </project>
