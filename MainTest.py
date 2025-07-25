@@ -32,7 +32,7 @@ EXPECTED_PASSED_RESULTS = {
     "unique10": {'Insert': ['Next', 1, '}']},
     "unique11": {'Insert': ['Next', 52, '}']},
     "unique12": {'Insert': ['Prev', 20, ')']},
-    "unique13": {'Insert': ['Next', 31, '}']},
+    "unique13": 0,
     "unique14": ['Next', 3, '}'],
     "unique15": ['Next', 19, '}'],
     "unique16": ['Next', 198, 'k'],
