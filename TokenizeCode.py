@@ -1,74 +1,72 @@
-from pygments import lex
-from pygments.lexers import get_lexer_by_name
-from pygments.token import Token
 import re
+from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, C_STYLE_LANGUAGES_COMMENT, SCRIPT_STYLE_LANGUAGES_COMMENT, NESTING_MARKERS
+def TokenizeCode(CodeString: str, Language: str):
+    if Language not in TAB_DEPENDENT_LANGUAGES:
+       return CodeString.replace(" ", "").replace("\n", "").replace("\t", "")
 
-def TokenizeCode(CodeString: str, language: str):
-        lexer = get_lexer_by_name(language)
-        tokens = list(lex(CodeString, lexer))
-        return tokens
+    else:
+        lines = CodeString.splitlines()
+        ProcessedLines = []
+        for line in lines:
+            LeadingSpaces = len(line) - len(line.lstrip(' '))
+            StrippedLine = line.strip()
+            ProcessedLine = ' ' * LeadingSpaces + StrippedLine
+            ProcessedLines.append(ProcessedLine)
+        return ''.join(ProcessedLines)
 
-def FindSpecialOperatorIndixes(CodeString: str, CommentPattern: str) :
+def FindSpecialOperatorIndixes(CodeString: str, CommentPattern: str, Language: str):
     ReComments = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
     ReStrings = [(m.start(), m.end()) for m in re.finditer(r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\'', CodeString, re.DOTALL)]
-    ReMatches = re.finditer(r'(\.\.\.|>>>|<<<)', CodeString)
-    OperatorIndixesList = []
+    patterns = r"(\.\.\.|>>>|<<<|\(|\)|\[|\]|\{|\})"
+    if Language in TAB_DEPENDENT_LANGUAGES:
+        patterns = r"(\.\.\.|>>>|<<<|\(|\)|\[|\]|\{|\}| )"
+    ReMatches = re.finditer(patterns, CodeString)
+    OperatorIndexesList = []
 
     for ReMatch in ReMatches:
         ReOperatorStart = ReMatch.start()
         if not any(start <= ReOperatorStart < end for start, end in ReComments + ReStrings):
-            OperatorIndixesList.append(ReOperatorStart)
-
-    return OperatorIndixesList
-
-def FindSpecialOperatorsWithLanguage(CodeString: str, language: str) :
-
-    CStyleLanguages = ['cpp', 'js', 'java', 'typescript', 'c', 'c#', 'rust', 'go']
-    ScriptStyleLanguages = ['python', 'ruby']
-    CStyleCommentPattern = r'//.*?$|/\*.*?\*/'
-    ScriptStyleCommentPattern = r'#.*?$|=begin.*?=end'
-
-    if language in CStyleLanguages:
-        return FindSpecialOperatorIndixes(CodeString, CStyleCommentPattern)
-    elif language in ScriptStyleLanguages:
-        return FindSpecialOperatorIndixes(CodeString, ScriptStyleCommentPattern)
+            OperatorIndexesList.append(ReOperatorStart)
+    return OperatorIndexesList
 
 
-def TokenizeWithSpecialOperators(CodeString: str, language: str,OperatorIndixesList: list) :
+def FindSpecialOperatorsWithLanguage(CodeString: str, language: str):
+    CStyleCommentPattern = r"//.*?$|/\*.*?\*/"
+    ScriptStyleCommentPattern = r"#.*?$|=begin.*?=end"
+    if language in C_STYLE_LANGUAGES_COMMENT:
+        return FindSpecialOperatorIndixes(CodeString, CStyleCommentPattern, language)
+    elif language in SCRIPT_STYLE_LANGUAGES_COMMENT:
+        return FindSpecialOperatorIndixes(CodeString, ScriptStyleCommentPattern, language)
+    return None
+
+
+def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixesList: list):
     TokensList = []
     PositionInCodeString = 0
-
     for i in OperatorIndixesList + [len(CodeString)]:
+        Token = CodeString[PositionInCodeString:i]
         if i > PositionInCodeString:
-            TokensList.extend(TokenizeCode(CodeString[PositionInCodeString:i], language))
+            Token = TokenizeCode(Token, language)
+            if len(Token) > 0:
+                TokensList.append(Token)
         if i < len(CodeString):
-            TokensList.append((Token.Operator, CodeString[i:i + 3]))
-        PositionInCodeString = i + 3
+            if CodeString[i: i + 3] in SPECIAL_OPERATORS:
+                TokensList.append(CodeString[i : i + 3])
+                PositionInCodeString = i + 3
+            elif CodeString[i] in NESTING_MARKERS:
+                TokensList.append(CodeString[i])
+                PositionInCodeString = i + 1
     return TokensList
 
-def CheckAndRunTokenize(CodeString: str,language: str):
-    OperatorIndixesList = FindSpecialOperatorsWithLanguage(CodeString,language)
+
+
+
+def CheckAndRunTokenize(CodeString: str, language: str):
+    OperatorIndixesList = FindSpecialOperatorsWithLanguage(CodeString, language)
     if not OperatorIndixesList:
-        return RemoveInsignificantTokens(TokenizeCode(CodeString, language), language)
+        return TokenizeCode(CodeString, language)
     else:
-        return RemoveInsignificantTokens(TokenizeWithSpecialOperators(CodeString, language, OperatorIndixesList), language)
+        return TokenizeWithSpecialOperators(CodeString, language, OperatorIndixesList)
 
-def RemoveInsignificantTokens(TokensList: list[tuple], language: str):
-    FilteredTokenList = []
-    IsTabulation = True
-    for TokenType, TokenValue in TokensList:
-        IsWhitespace = bool(re.match(r'^[ \n]*$', TokenValue))
 
-        if language in ['python', 'yaml']:
-            if IsWhitespace:
-                if IsTabulation:
-                    FilteredTokenList.append((TokenType, TokenValue))
-                elif '\n' in TokenValue:
-                    IsTabulation = True
-            else:
-                FilteredTokenList.append((TokenType, TokenValue))
-                IsTabulation = False
-        else:
-            if not IsWhitespace:
-                FilteredTokenList.append((TokenType, TokenValue))
-    return FilteredTokenList
+

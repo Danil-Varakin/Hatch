@@ -3,9 +3,9 @@ func VB   (asass) {
         class GG {
         }
     }
-void f() {
+void f {
 template<typename T>
-void f() {
+void f(zxcxczzcxczcx) {
   {const int x = 10;}
   if ( x > 10) {
     for (;;) {
@@ -21,4 +21,3 @@ void f() {
   zxc
   66 -- () 33
 }- 9 8
-}
