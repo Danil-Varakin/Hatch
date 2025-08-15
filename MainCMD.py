@@ -1,21 +1,25 @@
 import argparse
 import sys
-from ParsingCodeAndInstruction import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage
+from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength
 from TokenizeCode import CheckAndRunTokenize
 from Insert import RunInsert
 
 def process_match_mode(match_path, in_path, out_path, patch_path=None):
     try:
         language = DetectProgrammingLanguage(in_path)
-        match = ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Match')
-        patch = ReceivingMatchOrPatchOrSourceCodeFromList(patch_path, 'Patch') if patch_path else ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Patch')
-        SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(in_path, 'SourceCode')
-        match = CheckAndRunTokenize(match, language)
-        SourceCode = CheckAndRunTokenize(SourceCode, language)
-        RunInsert(match, patch, SourceCode, in_path, out_path)
-
+        matches = ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Match')
+        patches = ReceivingMatchOrPatchOrSourceCodeFromList(patch_path, 'Patch') if patch_path else ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Patch')
+        if ComparingListsLength(matches, patches):
+            for i, (match, patch) in enumerate(zip(matches, patches)):
+                SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(in_path, 'SourceCode')
+                match = CheckAndRunTokenize(match, language)
+                SourceCode = CheckAndRunTokenize(SourceCode, language)
+                RunInsert(match, patch, SourceCode, in_path, out_path)
+                print(f"Match  № {i} успешно вставлен")
+        else:
+            raise ValueError("Количество match и patch не совпадает")
         return f"Режим match: обработан {in_path}, результат Insert сохранен в {out_path}"
-    except Exception as e:
+    except (Exception, ValueError) as e:
         return f"Ошибка в режиме match: {e}"
 
 def main():

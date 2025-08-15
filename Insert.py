@@ -1,5 +1,5 @@
 from SearchCode import SearchInsertIndexInSourceCode
-from ParsingCodeAndInstruction import ReadFile, WriteFile
+from Utilities import ReadFile, WriteFile
 
 def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath):
     SearchResult = SearchInsertIndexInSourceCode(Match, SourceCode)
