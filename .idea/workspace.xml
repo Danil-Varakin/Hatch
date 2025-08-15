@@ -6,27 +6,32 @@
   <component name="ChangeListManager">
     <list default="true" id="d0f8d31b-d6f9-44aa-8c21-c7a301edc5c3" name="Changes" comment="В ParsingCodeAndInstruction.py исправили загрузку patch в функции PatchLoadFromString.&#10;В Insert.py дописана функция Replace для логики замены, изменена функция Insert под новый выход SearchIndexInSourceCode, добавлена функция RunInsert для выбора вставка с замено или без.&#10;В SearchCode.py добавлена функция CollectingResultsIndexInTokenList для проверки на уникальность match и сборки результата поиска, дописаны функции IsInsert и FindIsInsertIndex для исправления ошибки выдачи InsertIndex, изменена функция SearchInsertIndexInSourceCode под новый результат функции SearchInsertIndexInTokenList.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Insert.py" beforeDir="false" afterPath="$PROJECT_DIR$/Insert.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainCMD.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainCMD.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainOt.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainTest.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParsingCodeAndInstruction.py" beforeDir="false" afterPath="$PROJECT_DIR$/ParsingCodeAndInstruction.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MainOt.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainOt.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SearchCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/SearchCode.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UsersUX.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/UsersUXScripts.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/UsersUXStyle.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique20.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique20.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TokenizeCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/TokenizeCode.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Utilities.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utilities.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique13.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique13.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="53c3fadabe75fdc4f5a18189fc0c8891c02ddc54" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -53,11 +58,17 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Python tests.Python tests for MainTest.testFailedCases.executor": "Run",
-    "Python.MainOt.executor": "Run",
+    "Python.CodeComprasion.executor": "Run",
+    "Python.MainOt.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "dev"
+    "git-widget-placeholder": "development"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\droby\Documents\GitHub\Hatch\test\PassedTests" />
+    </key>
+  </component>
   <component name="RunManager" selected="Python.MainOt">
     <configuration name="MainOt" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Hatch" />
@@ -157,11 +168,18 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/SearchCode.py</url>
-          <line>13</line>
-          <option name="timeStamp" value="1" />
+          <url>file://$PROJECT_DIR$/MainOt.py</url>
+          <line>15</line>
+          <option name="timeStamp" value="11" />
         </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">

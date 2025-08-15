@@ -1,8 +1,7 @@
 import re
-from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, C_STYLE_LANGUAGES_COMMENT, SCRIPT_STYLE_LANGUAGES_COMMENT, NESTING_MARKERS, LANGUAGE_MAP, NESTING_CONTEXTS, EXTENSIONS_FILE
+from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, C_STYLE_LANGUAGES_COMMENT, SCRIPT_STYLE_LANGUAGES_COMMENT, NESTING_MARKERS
 from Utilities import FindNthNOperators
-from tree_sitter import Language, Parser
-from typing import List
+
 
 def TokenizeCode(CodeString: str, Language: str):
     if Language not in TAB_DEPENDENT_LANGUAGES:
@@ -47,25 +46,31 @@ def FindSpecialOperatorsWithLanguage(CodeString: str, language: str):
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixesList: list):
     TokensList = []
     PositionInCodeString = 0
+    OperatorIndixesList = sorted(OperatorIndixesList)
+
     for i in OperatorIndixesList + [len(CodeString)]:
         Token = CodeString[PositionInCodeString:i]
         if i > PositionInCodeString:
             Token = TokenizeCode(Token, language)
             if len(Token) > 0:
                 TokensList.append(Token)
+
         if i < len(CodeString):
             NthNOperator = FindNthNOperators(CodeString, i)
-            if CodeString[i: i + 3] in SPECIAL_OPERATORS:
-                TokensList.append(CodeString[i : i + 3])
-                PositionInCodeString = i + 3
-            elif NthNOperator:
+            if NthNOperator:
                 TokensList.append(NthNOperator)
                 PositionInCodeString = i + len(NthNOperator)
+            elif CodeString[i:i + 3] in SPECIAL_OPERATORS:
+                TokensList.append(CodeString[i:i + 3])
+                PositionInCodeString = i + 3
             elif CodeString[i] in NESTING_MARKERS:
                 TokensList.append(CodeString[i])
                 PositionInCodeString = i + 1
-    return TokensList
+            else:
+                TokensList.append(CodeString[i])
+                PositionInCodeString = i + 1
 
+    return TokensList
 
 
 
@@ -76,31 +81,5 @@ def CheckAndRunTokenize(CodeString: str, language: str):
     else:
         return TokenizeWithSpecialOperators(CodeString, language, OperatorIndixesList)
 
-def find_nesting_brackets(language, code):
-    if not language:
-        raise ValueError(f"Не поддерживаемый язык: {language}. Поддерживаемые языки: {list(EXTENSIONS_FILE.keys())}")
-    if language not in LANGUAGE_MAP or LANGUAGE_MAP[language] is None:
-        return []
 
-    language_obj = Language(LANGUAGE_MAP[language])
-    parser = Parser(language=language_obj)
-    tree = parser.parse(code.encode())
-    root = tree.root_node
-    positions: List[int] = []
-
-    def traverse(node):
-        if node.type in NESTING_CONTEXTS.get(language, []):
-            for child in node.children:
-                if child.type in ('<', '>'):
-                    positions.append(child.start_byte)
-                elif child.type in ('generic_type', 'type_identifier', 'preproc_arg'):
-                    for sub_child in child.children:
-                        if sub_child.type in ('<', '>'):
-                            positions.append(sub_child.start_byte)
-        for child in node.children:
-            traverse(child)
-
-
-    traverse(root)
-    return sorted(positions)
 

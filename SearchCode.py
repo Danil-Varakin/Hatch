@@ -75,7 +75,7 @@ def ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, Source
                 ComparisonSourceCodeTokenIndex += 1
                 CurrentSourceCodeTokenStringIndex = 0
             elif SourceCodeToken.startswith(MatchToken, CurrentSourceCodeTokenStringIndex):
-                CurrentSourceCodeTokenStringIndex += len(MatchToken) + 1
+                CurrentSourceCodeTokenStringIndex += len(MatchToken)
                 SubIndex += 1
                 MatchToken = MatchTokenList[SubIndex] if SubIndex < len(MatchTokenList) else ""
             elif len(SourceCodeToken) <= CurrentSourceCodeTokenStringIndex and( len(SourceCodeToken) > 1 or ComparisonSourceCodeTokenIndex == SourceCodeTokenIndex):

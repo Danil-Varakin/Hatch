@@ -2,6 +2,7 @@ import os
 import re
 from typing import Literal
 from constants import EXTENSIONS_FILE
+import subprocess
 
 def ReadFile(FilePath):
     try:
@@ -97,3 +98,33 @@ def IsOnlyOneInsert(MatchTokenList):
         else:
             return 2
     return 0
+
+def GetFileOldAndNewVersion(FilePath):
+    try:
+        OldVersionResult = subprocess.run(
+            ['git', 'show', f'HEAD:{FilePath}'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        OldVersion = OldVersionResult.stdout
+        if not os.path.exists(FilePath):
+            raise ValueError(f"Ошибка: Файл {FilePath} не найден на диске.")
+
+        CurrentVersion = ReadFile(FilePath)
+
+        if not OldVersion:
+            raise ValueError("Файл не найден при последнем commit")
+
+        return {"OldVersion":OldVersion, "CurrentVersion": CurrentVersion}
+
+    except subprocess.CalledProcessError as e:
+        print (f"Ошибка запуска git diff: {e.stderr}")
+    except FileNotFoundError as e:
+        if str(e).lower().find('git') != -1:
+            print("Ошибка: git не установлен или не найден под данному пути файла")
+        print(f"Ошибка чтения файла: {str(e)}")
+    except ValueError as e:
+        print(f"Логическая ошибка: {str(e)}")
+    except Exception as e:
+        print(f"Не известная ошибка: {str(e)}")
