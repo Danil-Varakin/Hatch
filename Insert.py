@@ -6,9 +6,13 @@ def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath):
     if not SearchResult:
         return 0
     if "Replace" in SearchResult:
-        Replace(Patch, SourcePath, OutPath, SearchResult)
+        CompletionStatus = Replace(Patch, SourcePath, OutPath, SearchResult)
     else:
-        Insert(Patch, SourcePath, OutPath, SearchResult)
+        CompletionStatus = Insert(Patch, SourcePath, OutPath, SearchResult)
+    if CompletionStatus == 0:
+        return 0
+    else:
+        return 1
 
 
 def Replace(Patch, SourcePath, OutPath, SearchResult):
@@ -41,8 +45,10 @@ def Replace(Patch, SourcePath, OutPath, SearchResult):
             ModifiedContent = SourceContent[:InsertIndex] + Patch + SourceContent[ReplaceIndex + len(ReplaceSearchString):]
 
         WriteFile(OutPath, ModifiedContent)
+        return 1
     except ValueError as e:
         print(f'Логическая ошибка: {e}')
+        return 0
 
 
 def Insert(Patch, SourcePath, OutPath, SearchResult):
@@ -69,5 +75,7 @@ def Insert(Patch, SourcePath, OutPath, SearchResult):
             ModifiedContent = SourceContent[:CharPosition + len(SearchString)] + Patch + SourceContent[CharPosition + len(SearchString):]
 
         WriteFile(OutPath, ModifiedContent)
+        return 1
     except ValueError as e:
         print(f'Логическая ошибка: {e}')
+        return 0

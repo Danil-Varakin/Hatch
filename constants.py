@@ -1,7 +1,7 @@
 
-SPECIAL_OPERATORS = ["...", ">>>", "<<<", "^..","$.."]#  + "_n."
+SPECIAL_OPERATORS = ["...", ">>>", "<<<", "^..","..^"]#  + "^n.."
 
-PASS_OPERATORS = ["^..","$..","..."]#  + "_n."
+PASS_OPERATORS = ["^..","..^","..."]#  + "^n.."
 
 TAB_DEPENDENT_LANGUAGES = ["python", "yaml"]
 
@@ -23,3 +23,10 @@ EXTENSIONS_FILE = {
     '.rb': 'ruby', '.ts': 'typescript', '.go': 'go',
     '.rs': ' ', '.md': 'markdown', '.cc': 'cpp', '.gn': 'gn', '.gni': 'gn', '.ninja': 'gn'}
 
+C_STYLE_COMMENT_PATTERN = r"//.*?$|/\*.*?\*/"
+
+SCRIPT_STYLE_COMMENT_PATTERN = r"#.*?$|=begin.*?=end"
+
+RE_STRING_PATTERN = r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\''
+
+SPECIAL_OPERATORS_PATTERN = r"(\.\.\.|>>>|<<<|\^\.\.|\.\.\^|\^[1-9]\d*\.\.|\(|\)|\[|\]|\{|\})"

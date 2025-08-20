@@ -76,22 +76,21 @@ def FindNthNOperators(string, StartIndex):
     if StartIndex >= len(string):
         return result
     EndIndex = StartIndex
-    if EndIndex < len(string) and string[EndIndex] == '_':
+    if EndIndex < len(string) and string[EndIndex] == '^':
         EndIndex += 1
         Numbers = ""
         while EndIndex < len(string) and string[EndIndex].isdigit():
             Numbers += string[EndIndex]
             EndIndex += 1
-        if EndIndex < len(string) and string[EndIndex] == '.' and Numbers:
-            result = string[StartIndex: EndIndex + 1]
+        if EndIndex < len(string) and string[EndIndex:EndIndex + 2] == '..' and Numbers:
+            result = string[StartIndex: EndIndex + 2]
     return result
 
 def IsPassToN(Token):
-    return re.fullmatch(r"_\d+\.", Token)
+    return re.fullmatch(r'\^[1-9]\d*\.\.', Token)
 
-def IsOnlyOneInsert(MatchTokenList):
+def InsertOperatorStatus(MatchTokenList):
     matches = [MatchToken for MatchToken in MatchTokenList if ">>>" in MatchToken]
-    print(matches)
     if matches:
         if len(matches) == 1:
             return 1

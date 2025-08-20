@@ -146,7 +146,7 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
                                         if NestingMap[SubIndex][0] == SourceCodeNestingLevel + ComparisonSourceCodeNestingLevel:
                                             CurrentSourceCodeTokenIndex = ComparisonSourceCodeTokenIndex
                                             SourceCodeNestingLevel = SourceCodeNestingLevel + ComparisonSourceCodeNestingLevel
-                                            if MatchTokenList[MatchTokenIndex] == "$..":
+                                            if MatchTokenList[MatchTokenIndex] == "..^":
                                                 if IsPassOutputDictionary:
                                                     IsPassOutputDictionary.clear()
                                                 IsPassOutputDictionary.append({"IndexString": IndexString, "CurrentSourceCodeTokenIndex": CurrentSourceCodeTokenIndex, "SourceCodeNestingLevel": SourceCodeNestingLevel, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel, "CurrentSourceCodeTokenStringIndex": CurrentSourceCodeTokenStringIndex, 'StartSourceCodeTokenIndex': SourceCodeTokenIndex, 'StartSourceCodeTokenStringIndex': StartSourceCodeTokenStringIndex})
@@ -172,7 +172,7 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
                                             CurrentSourceCodeTokenIndex = ComparisonSourceCodeTokenIndex
                                             SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])] = SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])] + ComprasionSourceCodeRelativeNestingLevel
                                             SourceCodeNestingLevel = SourceCodeNestingLevel + ComparisonSourceCodeNestingLevel
-                                            if MatchTokenList[MatchTokenIndex] == "$..":
+                                            if MatchTokenList[MatchTokenIndex] == "..^":
                                                 if IsPassOutputDictionary:
                                                     IsPassOutputDictionary.clear()
                                                 IsPassOutputDictionary.append({"IndexString": IndexString, "CurrentSourceCodeTokenIndex": CurrentSourceCodeTokenIndex, "SourceCodeNestingLevel": SourceCodeNestingLevel, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel, "CurrentSourceCodeTokenStringIndex": CurrentSourceCodeTokenStringIndex, 'StartSourceCodeTokenIndex': SourceCodeTokenIndex, 'StartSourceCodeTokenStringIndex': StartSourceCodeTokenStringIndex})

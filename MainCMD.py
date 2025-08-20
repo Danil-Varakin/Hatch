@@ -1,6 +1,6 @@
 import argparse
 import sys
-from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength
+from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength, InsertOperatorStatus, WriteFile
 from TokenizeCode import CheckAndRunTokenize
 from Insert import RunInsert
 
@@ -9,13 +9,22 @@ def process_match_mode(match_path, in_path, out_path, patch_path=None):
         language = DetectProgrammingLanguage(in_path)
         matches = ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Match')
         patches = ReceivingMatchOrPatchOrSourceCodeFromList(patch_path, 'Patch') if patch_path else ReceivingMatchOrPatchOrSourceCodeFromList(match_path, 'Patch')
+        ResultCode = ReceivingMatchOrPatchOrSourceCodeFromList(in_path, "SourceCode")
+        WriteFile(out_path, ResultCode)
         if ComparingListsLength(matches, patches):
             for i, (match, patch) in enumerate(zip(matches, patches)):
-                SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(in_path, 'SourceCode')
-                match = CheckAndRunTokenize(match, language)
+                SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(out_path, "SourceCode")
                 SourceCode = CheckAndRunTokenize(SourceCode, language)
-                RunInsert(match, patch, SourceCode, in_path, out_path)
-                print(f"Match  № {i} успешно вставлен")
+                match = CheckAndRunTokenize(match, language)
+                IsOnlyOneInsert = InsertOperatorStatus(match)
+                if IsOnlyOneInsert == 1:
+                    CompletionStatus = RunInsert(match, patch, SourceCode, out_path, out_path)
+                elif IsOnlyOneInsert == 2:
+                    raise ValueError("В match больше одной вставки")
+                else:
+                    raise ValueError("В match отсутствует место вставки")
+                if CompletionStatus == 1:
+                    print(f"Match  № {i} успешно вставлен")
         else:
             raise ValueError("Количество match и patch не совпадает")
         return f"Режим match: обработан {in_path}, результат Insert сохранен в {out_path}"
