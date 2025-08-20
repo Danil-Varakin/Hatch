@@ -63,12 +63,14 @@ def ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, Source
     if SubIndex < len(MatchTokenList):
         MatchToken = MatchTokenList[SubIndex]
         while SubIndex < len(MatchTokenList)  and ComparisonSourceCodeTokenIndex < len(SourceCodeTokenList) and MatchTokenList[SubIndex] not in SPECIAL_OPERATORS and not IsPassToN(MatchTokenList[SubIndex]):
+            SourceCodeToken = SourceCodeTokenList[ComparisonSourceCodeTokenIndex]
+
             if FlagFirstCircle or not ComparisonFlagFirstCircle:
                 if NestingMap[SubIndex][0] <= -1:
                     ComprasionSourceCodeRelativeNestingLevel = NestingLevelChange(ComprasionSourceCodeRelativeNestingLevel, SourceCodeTokenList, ComparisonSourceCodeTokenIndex)
                 ComparisonSourceCodeNestingLevel = NestingLevelChange(ComparisonSourceCodeNestingLevel, SourceCodeTokenList, ComparisonSourceCodeTokenIndex)
             ComparisonFlagFirstCircle = False
-            SourceCodeToken = SourceCodeTokenList[ComparisonSourceCodeTokenIndex]
+
             if SourceCodeToken[CurrentSourceCodeTokenStringIndex:] == MatchToken:
                 SubIndex += 1
                 MatchToken = MatchTokenList[SubIndex] if SubIndex < len(MatchTokenList) else ""
@@ -81,6 +83,8 @@ def ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, Source
             elif len(SourceCodeToken) <= CurrentSourceCodeTokenStringIndex and( len(SourceCodeToken) > 1 or ComparisonSourceCodeTokenIndex == SourceCodeTokenIndex):
                 ComparisonSourceCodeTokenIndex += 1
                 CurrentSourceCodeTokenStringIndex = 0
+            elif MatchToken in NESTING_MARKERS and len(SourceCodeToken) > 1:
+                return False
             else:
                 return False
     if not SubIndex < len(MatchTokenList) or MatchTokenList[MatchTokenIndex + 2] in SPECIAL_OPERATORS or IsPassToN(MatchTokenList[MatchTokenIndex + 2]):
@@ -382,12 +386,12 @@ def PassInNestingMarkers(IndexPassInMatch, MatchTokenList):
     return ClosestPair
 
 
-def FindAllSubstringEnds(string, substring, substringindex):
+def FindAllSubstringEnds(string, SubString, SubStringIndex):
     result = []
     while True:
-        index = string.find(substring, substringindex)
-        if index == -1:
+        index = string.find(SubString, SubStringIndex)
+        if SubString in NESTING_MARKERS and len(string) > 1 or index == -1:
             break
-        result.append(index + len(substring) - 1)
-        substringindex = index + 1
+        result.append(index + len(SubString) - 1)
+        SubStringIndex = index + 1
     return result

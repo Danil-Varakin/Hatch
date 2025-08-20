@@ -127,3 +127,9 @@ def GetFileOldAndNewVersion(FilePath):
         print(f"Логическая ошибка: {str(e)}")
     except Exception as e:
         print(f"Не известная ошибка: {str(e)}")
+
+def FilteringListByOccurrence(FilterableList, FilterList):
+    FilteredList = [
+        (start, end) for start, end in FilterableList
+        if not any(FilterTupleStart <= start < FilterTupleEnd for FilterTupleStart, FilterTupleEnd in FilterList)]
+    return FilteredList
