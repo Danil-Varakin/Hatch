@@ -1,8 +1,11 @@
 import re
 from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, NESTING_MARKERS, RE_STRING_PATTERN, SPECIAL_OPERATORS_PATTERN, COMMENT_PATTERN
 from Utilities import FindNthNOperators, FilteringListByOccurrence
+from Logging import setup_logger, log_function
 
+logger = setup_logger(log_file='my_app.log')
 
+@log_function
 def TokenizeCode(CodeString: str, Language: str):
     TokensList = []
     if Language not in TAB_DEPENDENT_LANGUAGES:
@@ -21,6 +24,7 @@ def TokenizeCode(CodeString: str, Language: str):
                     TokensList.append(Whitespace)
     return TokensList
 
+@log_function
 def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     ReComments = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
@@ -35,6 +39,7 @@ def FindSpecialOperatorIndexes(CodeString: str,  language: str):
             OperatorIndexesList.append(ReOperatorStart)
     return OperatorIndexesList
 
+@log_function
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list):
     TokensList = []
     PositionInCodeString = 0
@@ -61,11 +66,10 @@ def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexes
             else:
                 TokensList.append(CodeString[i])
                 PositionInCodeString = i + 1
-
     return TokensList
 
 
-
+@log_function
 def CheckAndRunTokenize(CodeString: str, language: str):
     try:
         if language in TAB_DEPENDENT_LANGUAGES:
@@ -76,7 +80,7 @@ def CheckAndRunTokenize(CodeString: str, language: str):
         else:
             return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList)
     except ValueError as e:
-        print(f"Logic error: {e}")
+        logger.error(f"Logic error: {e}")
         return 0
 
 

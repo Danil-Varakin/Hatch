@@ -3,7 +3,10 @@ import sys
 from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength, InsertOperatorStatus, WriteFile
 from TokenizeCode import CheckAndRunTokenize
 from Insert import RunInsert
+from Logging import setup_logger, log_function
 
+logger = setup_logger(log_file='my_app.log')
+@log_function
 def process_match_mode(match_path, in_path, out_path, patch_path=None, language = None):
     try:
         if language:
@@ -30,16 +33,19 @@ def process_match_mode(match_path, in_path, out_path, patch_path=None, language 
                 else:
                     raise ValueError("There is no insertion point in match")
                 if CompletionStatus == 1:
-                    print(f"Match  № {i} successfully inserted")
+                    logger.info(f"Match  № {i} successfully inserted")
         else:
             raise ValueError("The number of match and patch does not match")
         if CompletionStatus:
-            return f"Match mode: {in_path} processed, result Insert saved in {out_path}"
+            logger.info (f"Match mode: {in_path} processed, result Insert saved in {out_path}")
         else:
-            return f"Insertion error in Match mode "
-    except (Exception, ValueError) as e:
-        return f"Error in Match mode: {e}"
+            logger.error( f"Insertion error in Match mode ")
+    except ValueError as e:
+         logger.error(f"Error in Match mode: {e}")
+    except Exception as e:
+        logger.critical(f"Error in Match mode: {e}")
 
+@log_function
 def main():
     parser = argparse.ArgumentParser(description="Hatch is designed to simplify the process of applying Git patches. Traditional patches are complex to analyze and apply, especially in large projects. The Hatch logical language allows changes to be described declaratively, improving readability and automating the process.Hatch is designed to simplify the process of applying Git patches. Traditional patches are complex to analyze and apply, especially in large projects. The Hatch logical language allows changes to be described declaratively, improving readability and automating the process.")
 
@@ -52,12 +58,10 @@ def main():
     args = parser.parse_args()
 
     if args.match and args.in_file and args.out:
-        result = process_match_mode(args.match, args.in_file, args.out, args.patch, args.language)
-        print(result)
+        process_match_mode(args.match, args.in_file, args.out, args.patch, args.language)
     else:
-        print("Ошибка: некорректные аргументы. Требуются --match, --in и --out")
+        logger.error("Error: incorrect arguments. Required --match, --in and --out")
         parser.print_help()
         sys.exit(1)
-
 if __name__ == "__main__":
     main()

@@ -3,31 +3,36 @@ import re
 from typing import Literal
 from constants import EXTENSIONS_FILE
 import subprocess
+from Logging import setup_logger, log_function
 
+logger = setup_logger(log_file='my_app.log')
+
+@log_function
 def ReadFile(FilePath):
     try:
         with open(FilePath, 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
-        print(f"Error: file {FilePath} not found")
+        logger.error(f"Error: file {FilePath} not found")
 
 
+@log_function
 def ReadLine(FilePath):
     try:
         with open(FilePath, 'r', encoding='utf-8') as file:
             return file.readlines()
     except FileNotFoundError:
-        print(f"Error: file {FilePath} not found")
+        logger.error(f"Error: file {FilePath} not found")
 
-
+@log_function
 def WriteFile(FilePath, Result):
     try:
         with open(FilePath, 'w', encoding='utf-8') as file:
             file.write(Result)
     except FileNotFoundError:
-        print(f"Error: file {FilePath} not found")
+        logger.error(f"Error: file {FilePath} not found")
 
-
+@log_function
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
         matches = re.findall(r'### match:\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
@@ -36,9 +41,10 @@ def MatchLoadFromString(StringOfMarkdownContent):
         else:
             raise ValueError("Match not found")
     except ValueError as e:
-        print(f"Logic error: {e}")
+        logger.error(f"Logic error: {e}")
         return []
 
+@log_function
 def PatchLoadFromString(StringOfMarkdownContent):
     try:
         patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
@@ -47,13 +53,21 @@ def PatchLoadFromString(StringOfMarkdownContent):
         else:
             raise ValueError("Patch not found")
     except ValueError as e:
-        print(f"Logic error: {e}")
+        logger.error(f"Logic error: {e}")
         return []
 
+@log_function
 def DetectProgrammingLanguage(FileNameSourceCode):
-    ext = os.path.splitext(FileNameSourceCode)[1].lower()
-    return EXTENSIONS_FILE.get(ext, 'Unknown language')
+    try:
+        ext = os.path.splitext(FileNameSourceCode)[1].lower()
+        Language = EXTENSIONS_FILE.get(ext, None)
+        if not Language:
+            raise ValueError ("Unknown language")
+        return Language
+    except ValueError as e:
+        logger.error(f"Logic error: {e}")
 
+@log_function
 def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Match', 'Patch', 'SourceCode']):
     if TypeContent == 'Match':
         return MatchLoadFromString(ReadFile(FilePath))
@@ -62,15 +76,17 @@ def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Ma
     else:
         return ReadFile(FilePath)
 
+@log_function
 def ComparingListsLength(matches, patches):
     try:
         if len(matches) != len(patches):
             raise ValueError("The number of Match and Patch sections does not match")
         return True
     except ValueError as e:
-        print(f"Logic error: {e}")
+        logger.error(f"Logic error: {e}")
         return False
 
+@log_function
 def FindNthNOperators(string, StartIndex):
     result = ""
     if StartIndex >= len(string):
@@ -86,9 +102,11 @@ def FindNthNOperators(string, StartIndex):
             result = string[StartIndex: EndIndex + 2]
     return result
 
+@log_function
 def IsPassToN(Token):
     return re.fullmatch(r'\^[1-9]\d*\.\.', Token)
 
+@log_function
 def InsertOperatorStatus(MatchTokenList):
     matches = [MatchToken for MatchToken in MatchTokenList if ">>>" in MatchToken]
     if matches:
@@ -98,6 +116,22 @@ def InsertOperatorStatus(MatchTokenList):
             return 2
     return 0
 
+def AddingTabs(string, CodeNestingLevel):
+    if '\n' in string:
+        patch_lines = string.split('\n')
+        indented_lines = []
+        IsFirstLine = True
+        for line in patch_lines:
+            if line and not IsFirstLine:
+                indented_lines.append('\t' * CodeNestingLevel + line)
+            else:
+                indented_lines.append(line)
+            IsFirstLine = False
+        string = '\n'.join(indented_lines)
+        if string[len(string) - 1] == "\n":
+            string = string + '\t' * CodeNestingLevel
+    return string
+@log_function
 def GetFileOldAndNewVersion(FilePath):
     try:
         OldVersionResult = subprocess.run(
@@ -118,16 +152,17 @@ def GetFileOldAndNewVersion(FilePath):
         return {"OldVersion":OldVersion, "CurrentVersion": CurrentVersion}
 
     except subprocess.CalledProcessError as e:
-        print (f"Error run git diff: {e.stderr}")
+        logger.critical(f"Error run git diff: {e.stderr}")
     except FileNotFoundError as e:
         if str(e).lower().find('git') != -1:
-            print("Error: git not installed or not found in this file path")
-        print(f"File reading error: {str(e)}")
+            logger.error("Error: git not installed or not found in this file path")
+        logger.critical(f"File reading error: {str(e)}")
     except ValueError as e:
-        print(f"Logic error: {str(e)}")
+        logger.error(f"Logic error: {str(e)}")
     except Exception as e:
-        print(f"An unknown error: {str(e)}")
+        logger.critical(f"An unknown error: {str(e)}")
 
+@log_function
 def FilteringListByOccurrence(FilterableList, FilterList):
     FilteredList = [
         (start, end) for start, end in FilterableList
