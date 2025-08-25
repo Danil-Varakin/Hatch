@@ -3,7 +3,9 @@
 ...
 VerifiedContents::CreateFromFile(...) {
  ...
- >>>
+  >>>
+ return nullptr;
+ ...
 }
 ...
 ```
@@ -11,4 +13,5 @@ VerifiedContents::CreateFromFile(...) {
 ### patch
 ```
 _ChromiumImpl
+
 ```

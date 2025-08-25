@@ -1,18 +1,20 @@
 
-
 ### match:
 ```
 ...
-class BraveSearchTestEnabled ... {
+action("audit_deps") {
+^..
 ...
->>>
-};
+args ... ^2.. [>>>...]
 ...
+}
+
 ```
 
 ### patch
 
 ```
+
 print("[INFO]: ")
 ```
 

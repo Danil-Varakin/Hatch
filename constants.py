@@ -1,13 +1,9 @@
 
-SPECIAL_OPERATORS = ["...", ">>>", "<<<", "^..","$.."]#  + "_n."
+SPECIAL_OPERATORS = ["...", ">>>", "<<<", "^..","..^"]#  + "^n.."
 
-PASS_OPERATORS = ["^..","$..","..."]#  + "_n."
+PASS_OPERATORS = ["^..","..^","..."]#  + "^n.."
 
 TAB_DEPENDENT_LANGUAGES = ["python", "yaml"]
-
-C_STYLE_LANGUAGES_COMMENT = ["cpp", "js", "java", "typescript", "c", "c#", "rust", "go", "gn"]
-
-SCRIPT_STYLE_LANGUAGES_COMMENT = ["python", "ruby"]
 
 NESTING_MARKERS = ["}", ")", "]", "{", "(", "["]
 
@@ -23,3 +19,22 @@ EXTENSIONS_FILE = {
     '.rb': 'ruby', '.ts': 'typescript', '.go': 'go',
     '.rs': ' ', '.md': 'markdown', '.cc': 'cpp', '.gn': 'gn', '.gni': 'gn', '.ninja': 'gn'}
 
+COMMENT_PATTERN = {
+        'python': r"#.*?$",
+        'java': r"//.*?$|/\*.*?\*/",
+        'cpp': r"//.*?$|/\*.*?\*/",
+        'c': r"//.*?$|/\*.*?\*/",
+        'csharp': r"//.*?$|/\*.*?\*/",
+        'javascript': r"//.*?$|/\*.*?\*/",
+        'ruby': r"#.*?$|=begin.*?=end",
+        'typescript': r"//.*?$|/\*.*?\*/",
+        'go': r"//.*?$|/\*.*?\*/",
+        'rust': r"//.*?$|/\*.*?\*/",
+        'markdown': r"<!--.*?-->",
+        'gn': r"#.*?$"
+    }
+
+
+RE_STRING_PATTERN = r'"[^"\\]*(?:\\.[^"\\]*)*"|\'[^\'\\]*(?:\\.[^\'\\]*)*\''
+
+SPECIAL_OPERATORS_PATTERN = r"(\.\.\.|>>>|<<<|\^\.\.|\.\.\^|\^[1-9]\d*\.\.|\(|\)|\[|\]|\{|\})"
