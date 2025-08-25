@@ -3,7 +3,7 @@
 ### match:
 ```
 ...
-class BraveSearchTestEnabled ... {
+class BraveSearchTestEnabled ^.. {
 ...
 >>>
 };

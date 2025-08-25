@@ -36,7 +36,7 @@ def Replace(Patch, SourcePath, OutPath, SearchResult):
             if InsertOccurrenceCount == InsertCount and ReplaceOccurrenceCount == ReplaceCount:
                 break
         if InsertIndex == -1 or ReplaceIndex == -1:
-            raise ValueError('Позиция вставки и/или замены не найдена')
+            raise ValueError('The insertion and/or replacement position was not found')
         if InsertPosition == 'Prev' and ReplacePosition == 'Next':
             ModifiedContent = SourceContent[:InsertIndex + len(InsertSearchString)] + Patch + SourceContent[ReplaceIndex:]
         elif InsertPosition == 'Next' and ReplacePosition == 'Next':
@@ -47,7 +47,7 @@ def Replace(Patch, SourcePath, OutPath, SearchResult):
         WriteFile(OutPath, ModifiedContent)
         return 1
     except ValueError as e:
-        print(f'Логическая ошибка: {e}')
+        print(f'Logic error: {e}')
         return 0
 
 
@@ -67,7 +67,7 @@ def Insert(Patch, SourcePath, OutPath, SearchResult):
                     break
 
         if CharPosition == -1:
-            raise ValueError('Позиция вставки не найдена')
+            raise ValueError('Insertion position not found')
 
         if position == 'Next':
             ModifiedContent = SourceContent[:CharPosition] + Patch + SourceContent[CharPosition:]
@@ -77,5 +77,5 @@ def Insert(Patch, SourcePath, OutPath, SearchResult):
         WriteFile(OutPath, ModifiedContent)
         return 1
     except ValueError as e:
-        print(f'Логическая ошибка: {e}')
+        print(f'Logic error: {e}')
         return 0

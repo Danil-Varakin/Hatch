@@ -21,7 +21,7 @@ def TokenizeCode(CodeString: str, Language: str):
                     TokensList.append(Whitespace)
     return TokensList
 
-def FindSpecialOperatorIndixes(CodeString: str,  language: str):
+def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     ReComments = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
     ReStrings = [(m.start(), m.end()- 1) for m in re.finditer(RE_STRING_PATTERN, CodeString, re.DOTALL)]
@@ -35,12 +35,12 @@ def FindSpecialOperatorIndixes(CodeString: str,  language: str):
             OperatorIndexesList.append(ReOperatorStart)
     return OperatorIndexesList
 
-def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixesList: list):
+def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list):
     TokensList = []
     PositionInCodeString = 0
-    OperatorIndixesList = sorted(OperatorIndixesList)
+    OperatorIndexesList = sorted(OperatorIndexesList)
 
-    for i in OperatorIndixesList + [len(CodeString)]:
+    for i in OperatorIndexesList + [len(CodeString)]:
         Token = CodeString[PositionInCodeString:i]
         if i > PositionInCodeString:
             Token = TokenizeCode(Token, language.lower())
@@ -67,11 +67,17 @@ def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndixes
 
 
 def CheckAndRunTokenize(CodeString: str, language: str):
-    OperatorIndixesList = FindSpecialOperatorIndixes(CodeString, language)
-    if not OperatorIndixesList:
-        return TokenizeCode(CodeString, language)
-    else:
-        return TokenizeWithSpecialOperators(CodeString, language, OperatorIndixesList)
+    try:
+        if language in TAB_DEPENDENT_LANGUAGES:
+            raise ValueError("Tab dependent language are not being processed yet")
+        OperatorIndexesList = FindSpecialOperatorIndexes(CodeString, language)
+        if not OperatorIndexesList:
+            return TokenizeCode(CodeString, language)
+        else:
+            return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList)
+    except ValueError as e:
+        print(f"Logic error: {e}")
+        return 0
 
 
 

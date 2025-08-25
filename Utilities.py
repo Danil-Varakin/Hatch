@@ -9,7 +9,7 @@ def ReadFile(FilePath):
         with open(FilePath, 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
-        return f"Ошибка: файл {FilePath} не найден"
+        print(f"Error: file {FilePath} not found")
 
 
 def ReadLine(FilePath):
@@ -17,7 +17,7 @@ def ReadLine(FilePath):
         with open(FilePath, 'r', encoding='utf-8') as file:
             return file.readlines()
     except FileNotFoundError:
-        return f"Ошибка: файл {FilePath} не найден"
+        print(f"Error: file {FilePath} not found")
 
 
 def WriteFile(FilePath, Result):
@@ -25,7 +25,7 @@ def WriteFile(FilePath, Result):
         with open(FilePath, 'w', encoding='utf-8') as file:
             file.write(Result)
     except FileNotFoundError:
-        print( f"Ошибка: файл {FilePath} не найден")
+        print(f"Error: file {FilePath} not found")
 
 
 def MatchLoadFromString(StringOfMarkdownContent):
@@ -34,9 +34,9 @@ def MatchLoadFromString(StringOfMarkdownContent):
         if matches:
             return [match.strip() for match in matches]
         else:
-            raise ValueError("Match не найден")
+            raise ValueError("Match not found")
     except ValueError as e:
-        print(f"Логическая ошибка: {e}")
+        print(f"Logic error: {e}")
         return []
 
 def PatchLoadFromString(StringOfMarkdownContent):
@@ -45,14 +45,14 @@ def PatchLoadFromString(StringOfMarkdownContent):
         if patches:
             return [patch[1:-1] if patch.startswith('\n') and patch.endswith('\n') else patch.strip() for patch in patches]
         else:
-            raise ValueError("Patch не найден")
+            raise ValueError("Patch not found")
     except ValueError as e:
-        print(f"Логическая ошибка: {e}")
+        print(f"Logic error: {e}")
         return []
 
 def DetectProgrammingLanguage(FileNameSourceCode):
     ext = os.path.splitext(FileNameSourceCode)[1].lower()
-    return EXTENSIONS_FILE.get(ext, 'Неизвестный язык')
+    return EXTENSIONS_FILE.get(ext, 'Unknown language')
 
 def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Match', 'Patch', 'SourceCode']):
     if TypeContent == 'Match':
@@ -65,10 +65,10 @@ def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Ma
 def ComparingListsLength(matches, patches):
     try:
         if len(matches) != len(patches):
-            raise ValueError("Количество Match и Patch секций не совпадает")
+            raise ValueError("The number of Match and Patch sections does not match")
         return True
     except ValueError as e:
-        print(f"Логическая ошибка: {e}")
+        print(f"Logic error: {e}")
         return False
 
 def FindNthNOperators(string, StartIndex):
@@ -108,28 +108,30 @@ def GetFileOldAndNewVersion(FilePath):
         )
         OldVersion = OldVersionResult.stdout
         if not os.path.exists(FilePath):
-            raise ValueError(f"Ошибка: Файл {FilePath} не найден на диске.")
+            raise ValueError(f"Error: file {FilePath} not found on disk.")
 
         CurrentVersion = ReadFile(FilePath)
 
         if not OldVersion:
-            raise ValueError("Файл не найден при последнем commit")
+            raise ValueError("File not found in last commit")
 
         return {"OldVersion":OldVersion, "CurrentVersion": CurrentVersion}
 
     except subprocess.CalledProcessError as e:
-        print (f"Ошибка запуска git diff: {e.stderr}")
+        print (f"Error run git diff: {e.stderr}")
     except FileNotFoundError as e:
         if str(e).lower().find('git') != -1:
-            print("Ошибка: git не установлен или не найден под данному пути файла")
-        print(f"Ошибка чтения файла: {str(e)}")
+            print("Error: git not installed or not found in this file path")
+        print(f"File reading error: {str(e)}")
     except ValueError as e:
-        print(f"Логическая ошибка: {str(e)}")
+        print(f"Logic error: {str(e)}")
     except Exception as e:
-        print(f"Не известная ошибка: {str(e)}")
+        print(f"An unknown error: {str(e)}")
 
 def FilteringListByOccurrence(FilterableList, FilterList):
     FilteredList = [
         (start, end) for start, end in FilterableList
         if not any(FilterTupleStart <= start < FilterTupleEnd for FilterTupleStart, FilterTupleEnd in FilterList)]
     return FilteredList
+
+
