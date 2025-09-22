@@ -301,6 +301,7 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
             MatchTokenEndsInSourceCodeTokenList = FindAllSubstringEnds(SourceCodeTokenList[CurrentSourceCodeTokenIndex], MatchTokenList[MatchTokenIndex + 1], CurrentSourceCodeTokenStringIndex)
             if NestingMap[MatchTokenIndex + 1][0] <= -1:
                 SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])] = NestingLevelChange(SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])], SourceCodeTokenList, CurrentSourceCodeTokenIndex)
+            SourceCodeNestingLevel = NestingLevelChange(SourceCodeNestingLevel, SourceCodeTokenList, CurrentSourceCodeTokenIndex)
             if MatchTokenEndsInSourceCodeTokenList:
                 StartSourceCodeTokenIndex = CurrentSourceCodeTokenIndex
                 for CurrentSourceCodeTokenStringIndex in MatchTokenEndsInSourceCodeTokenList:
