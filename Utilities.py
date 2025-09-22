@@ -35,7 +35,7 @@ def WriteFile(FilePath, Result):
 @log_function
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
-        matches = re.findall(r'### match:\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
+        matches = re.findall(r'### match\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
         if matches:
             return [match.strip() for match in matches]
         else:
@@ -47,7 +47,7 @@ def MatchLoadFromString(StringOfMarkdownContent):
 @log_function
 def PatchLoadFromString(StringOfMarkdownContent):
     try:
-        patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
+        patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
         if patches:
             return [patch[1:-1] if patch.startswith('\n') and patch.endswith('\n') else patch.strip() for patch in patches]
         else:
