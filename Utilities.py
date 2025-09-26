@@ -8,9 +8,9 @@ from Logging import setup_logger, log_function
 logger = setup_logger(log_file='my_app.log')
 
 @log_function
-def ReadFile(FilePath):
+def ReadFile(FilePath, encoding='utf-8'):
     try:
-        with open(FilePath, 'r', encoding='utf-8') as file:
+        with open(FilePath, 'r', encoding = encoding) as file:
             return file.read()
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")

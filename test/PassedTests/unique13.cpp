@@ -42,7 +42,7 @@ using RequestExpectationsCallback =
 
 namespace {
 
-constexpr char kEmbeddedTestServerDirectory[] = "brave-search";
+
 constexpr char kAllowedDomain[] = "search.brave.com";
 constexpr char kAllowedDomainDev[] = "search.brave.software";
 constexpr char kNotAllowedDomain[] = "brave.com";
