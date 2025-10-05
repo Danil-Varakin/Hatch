@@ -4,8 +4,8 @@ from TokenizeCode import CheckAndRunTokenize
 from SearchCode import MatchNestingLevelInsertALL, SearchInsertIndexInSourceCode, SearchInsertIndexInTokenList, TokensInNestingMarkersAll, DictToTuples
 from Insert import RunInsert
 
-SourcePath = "test/PassedTests/unique20.gn"
-MatchPath = "test/PassedTests/unique20.md"
+SourcePath = "test/PassedTests/unique13.cpp"
+MatchPath = "test/PassedTests/unique13.md"
 ResultPath = 'result1.cpp'
 Language = DetectProgrammingLanguage(SourcePath)
 Matches = ReceivingMatchOrPatchOrSourceCodeFromList(MatchPath, "Match")

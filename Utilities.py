@@ -45,6 +45,25 @@ def MatchLoadFromString(StringOfMarkdownContent):
         return []
 
 @log_function
+def ReadFileContents(PathFile, MainBranch):
+    try:
+        NewLines = ReadLine(PathFile)
+        RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
+        OldContent = subprocess.check_output(
+            ["git", "show", f"{MainBranch}:{RepositoryPath}"],
+            text=True,
+            encoding="utf-8")
+        OldLines = OldContent.splitlines(keepends=True)
+        return {"NewLines": NewLines, "OldLines": OldLines}
+    except subprocess.CalledProcessError as e:
+        if "exists on disk, but not in" in str(e):
+            logger.warning(f"Файл {PathFile} отсутствует в ветке {MainBranch}. Считаем старую версию пустой.")
+            return {"NewLines": ReadLine(PathFile), "OldLines": []}
+        else:
+            logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
+            raise
+
+@log_function
 def PatchLoadFromString(StringOfMarkdownContent):
     try:
         patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
