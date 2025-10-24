@@ -291,6 +291,7 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
     for IsPassDictionary in IsPassDictionaryList:
         CurrentSourceCodeTokenIndex = IsPassDictionary["CurrentSourceCodeTokenIndex"]
         CurrentSourceCodeTokenStringIndex = IsPassDictionary["CurrentSourceCodeTokenStringIndex"]
+        StartSourceCodeTokenStringIndex = IsPassDictionary["CurrentSourceCodeTokenStringIndex"]
         SourceCodeNestingLevel = IsPassDictionary["SourceCodeNestingLevel"]
         SourceCodeRelativeNestingLevel = IsPassDictionary["SourceCodeRelativeNestingLevel"]
         IndexString =IsPassDictionary["IndexString"]
@@ -305,6 +306,9 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
             if MatchTokenEndsInSourceCodeTokenList:
                 StartSourceCodeTokenIndex = CurrentSourceCodeTokenIndex
                 for CurrentSourceCodeTokenStringIndex in MatchTokenEndsInSourceCodeTokenList:
+
+                    if CurrentSourceCodeTokenStringIndex != StartSourceCodeTokenStringIndex + len(MatchTokenList[MatchTokenIndex + 1]) - 1:
+                        continue
                     CounterMatches = 0
                     StartSourceCodeTokenStringIndex = CurrentSourceCodeTokenStringIndex
                     ComparisonTokenResults = ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, CurrentSourceCodeTokenIndex, NestingMap, CurrentSourceCodeTokenStringIndex, SourceCodeNestingLevel, IndexString + str(CounterMatches) + '/')
@@ -374,7 +378,6 @@ def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
         InsertIndexInTokenDictionary = SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList)
         if not InsertIndexInTokenDictionary:
             raise ValueError ("The insertion location was not found.")
-            return 0
 
         if "ReplaceSourceCodeTokenIndex" in InsertIndexInTokenDictionary:
             TokenReplaceDirection = InsertIndexInTokenDictionary["ReplacePosition"]
@@ -400,7 +403,7 @@ def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
         return Result
     except ValueError as e:
         logger.error(f"Logic error: {e}")
-
+        return 0
 
 @log_function
 def GetBracketIndicesForEllipsis(MatchTokenList):
