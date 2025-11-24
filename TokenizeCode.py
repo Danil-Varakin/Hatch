@@ -3,9 +3,9 @@ from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, NESTING_MARKER
 from Utilities import FindNthNOperators, FilteringListByOccurrence
 from Logging import setup_logger, log_function
 
-logger = setup_logger(log_file='my_app.log')
+logger = setup_logger()
 
-@log_function
+@log_function(args=False, result=False)
 def TokenizeCode(CodeString: str, Language: str):
     TokensList = []
     if Language not in TAB_DEPENDENT_LANGUAGES:
@@ -24,7 +24,7 @@ def TokenizeCode(CodeString: str, Language: str):
                     TokensList.append(Whitespace)
     return TokensList
 
-@log_function
+@log_function(args=False, result=False)
 def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     ReComments = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
@@ -41,7 +41,7 @@ def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     IsSpecialOperatorsInCommentsOrStringList, SpecialOperatorIndexesList = IsSpecialOperatorsInCommentsOrString(CodeString, CommentsAndStringIndexList)
     return OperatorIndexesList, IsSpecialOperatorsInCommentsOrStringList, CommentsAndStringIndexList, SpecialOperatorIndexesList
 
-@log_function
+@log_function(args=False, result=False)
 def IsSpecialOperatorsInCommentsOrString(CodeString, CommentsAndStringIndexList):
     ReSpecialOperators = re.finditer(SPECIAL_OPERATORS_PATTERN, CodeString)
     result = []
@@ -59,7 +59,7 @@ def IsSpecialOperatorsInCommentsOrString(CodeString, CommentsAndStringIndexList)
     return sorted(result, key=lambda x: x[0]), SpecialOperatorIndexesList
 
 
-@log_function
+@log_function(args=False, result=False)
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list, IsSpecialOperatorsInCommentsOrStringList: list, CommentsAndStringIndexList: list, SpecialOperatorIndexesList: list):
     TokensList = []
     PositionInCodeString = 0
@@ -99,7 +99,7 @@ def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexes
     return TokensList
 
 
-@log_function
+@log_function(args=False, result=False)
 def CheckAndRunTokenize(CodeString: str, language: str):
     try:
         if language in TAB_DEPENDENT_LANGUAGES:

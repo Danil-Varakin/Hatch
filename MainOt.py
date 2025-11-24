@@ -1,4 +1,3 @@
-
 from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength, WriteFile, InsertOperatorStatus
 from TokenizeCode import CheckAndRunTokenize
 from SearchCode import MatchNestingLevelInsertALL, SearchInsertIndexInSourceCode, TokensInNestingMarkersAll
@@ -21,8 +20,6 @@ if ComparingListsLength(Matches, Patches):
         if IsOnlyOneInsert == 1:
             FFFF = MatchNestingLevelInsertALL(Match)
             sss = TokensInNestingMarkersAll(Match)
-            print(f" Match: {Match}")
-            print(f"Source code TokenList: {SourceCode}")
             SearchDictionary = SearchInsertIndexInSourceCode(Match, SourceCode)
             print(f"Insert index in sourcecode TokenList: {SearchDictionary}")
             RunInsert(Match, Patch, SourceCode, ResultPath, ResultPath)

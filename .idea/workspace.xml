@@ -5,29 +5,41 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a4e4864a-9d13-423b-8f87-3d599fa6f103" name="Changes" comment="Переделана сборка git diff с учетом реального кода, добавлена сборка инструкций Match">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/pythonProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pythonProject.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ComprasionVersion.py" beforeDir="false" afterPath="$PROJECT_DIR$/ComprasionVersion.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Insert.py" beforeDir="false" afterPath="$PROJECT_DIR$/Insert.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Logging.py" beforeDir="false" afterPath="$PROJECT_DIR$/Logging.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MainCMD.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainCMD.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MainOt.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainOt.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MainOt2.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainOt2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SearchCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/SearchCode.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TokenizeCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/TokenizeCode.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Utilities.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utilities.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique10.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique10.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/grammars/tree-sitter-cpp/grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/grammars/tree-sitter-cpp/grammar.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique1.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/FailedTests/unique1.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique2.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/FailedTests/unique2.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique20.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/FailedTests/unique20.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/FailedTests/unique9.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/FailedTests/unique9.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique10.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique10.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique11.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique11.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique11.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique11.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique12.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique12.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique14.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique14.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique15.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique15.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique16.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique16.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique17.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique17.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique18.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique18.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique14.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique14.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique15.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique15.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique16.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique16.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique17.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique17.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique18.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique18.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique3.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique3.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique19.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique19.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique3.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique3.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique5.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique5.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique5.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique5.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique6.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique6.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique6.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique6.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique7.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique7.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique8.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique8.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/PassedTests/unique8.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique8.md" afterDir="false" />
     </list>
@@ -69,18 +81,46 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;Python.ComprasionVersion.executor&quot;: &quot;Run&quot;,
-    &quot;Python.MainOt.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ComprasionVersion.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.MainOt.executor&quot;: &quot;Debug&quot;,
     &quot;Python.MainOt2.executor&quot;: &quot;Run&quot;,
-    &quot;Python.SearchCode.executor&quot;: &quot;Run&quot;,
+    &quot;Python.SearchCode.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.sbis_parser.executor&quot;: &quot;Run&quot;,
     &quot;Python.test.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;development&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/droby/Hatch/MainOt2.py&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/droby/Hatch&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.tabs&quot;
   }
 }</component>
-  <component name="RunManager">
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\droby\Hatch" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.MainOt">
+    <configuration name="MainOt" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="pythonProject" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MainOt.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="MainOt2" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pythonProject" />
       <option name="ENV_FILES" value="" />
@@ -132,6 +172,29 @@
     <option name="localTasksCounter" value="2" />
     <servers />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/attribute" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Переделана сборка git diff с учетом реального кода, добавлена сборка инструкций Match" />
     <option name="LAST_COMMIT_MESSAGE" value="Переделана сборка git diff с учетом реального кода, добавлена сборка инструкций Match" />
@@ -140,11 +203,28 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Utilities.py</url>
-          <line>114</line>
-          <option name="timeStamp" value="16" />
+          <url>file://$PROJECT_DIR$/ComprasionVersion.py</url>
+          <line>611</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/SearchCode.py</url>
+          <line>19</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/ComprasionVersion.py</url>
+          <line>436</line>
+          <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">

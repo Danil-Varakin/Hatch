@@ -6,9 +6,9 @@ import subprocess
 from Logging import setup_logger, log_function
 import tempfile
 
-logger = setup_logger(log_file='my_app.log')
+logger = setup_logger()
 
-@log_function
+@log_function(args=False, result=False)
 def ReadFile(FilePath, encoding='utf-8'):
     try:
         with open(FilePath, 'r', encoding = encoding) as file:
@@ -17,7 +17,7 @@ def ReadFile(FilePath, encoding='utf-8'):
         logger.error(f"Error: file {FilePath} not found")
 
 
-@log_function
+@log_function(args=False, result=False)
 def ReadLine(FilePath):
     try:
         with open(FilePath, 'r', encoding='utf-8') as file:
@@ -25,7 +25,7 @@ def ReadLine(FilePath):
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
-@log_function
+@log_function(args=False, result=False)
 def WriteFile(FilePath, Result):
     try:
         with open(FilePath, 'w', encoding='utf-8') as file:
@@ -33,7 +33,7 @@ def WriteFile(FilePath, Result):
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
-@log_function
+@log_function(args=False, result=False)
 def WriteResultToMarkdown(output_file, match_result, change_dict):
 
     try:
@@ -51,7 +51,7 @@ def WriteResultToMarkdown(output_file, match_result, change_dict):
         logger.error(f"Ошибка при записи в Markdown файл: {str(e)}")
         raise
 
-@log_function
+@log_function(args=False, result=False)
 def ReadLastGitCommit(PathFile, MainBranch):
     try:
         RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
@@ -65,7 +65,7 @@ def ReadLastGitCommit(PathFile, MainBranch):
         logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
         raise
 
-@log_function
+@log_function(args=False, result=False)
 def ReadLastGitCommitLines(PathFile, MainBranch):
     try:
         RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
@@ -82,7 +82,7 @@ def ReadLastGitCommitLines(PathFile, MainBranch):
             logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
         return 0
 
-@log_function
+@log_function(args=False, result=False)
 def GetDiffOutput(FileLines, PathFile):
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as TemporaryFile:
@@ -106,7 +106,7 @@ def GetDiffOutput(FileLines, PathFile):
         logger.error(f"Ошибка при сравнении файлов {PathFile}: {str(e)}")
         return 0
 
-@log_function
+@log_function(args=False, result=False)
 def FilterDiffOutput(DiffOutput):
     try:
         lines = DiffOutput.splitlines()
@@ -158,7 +158,7 @@ def FilterDiffOutput(DiffOutput):
     except Exception as e:
         logger.error(f"Ошибка при фильтрации diff: {str(e)}")
         return 0
-@log_function
+@log_function(args=False, result=False)
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
         matches = re.findall(r'### match\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
@@ -170,7 +170,7 @@ def MatchLoadFromString(StringOfMarkdownContent):
         logger.error(f"Logic error: {e}")
         return []
 
-@log_function
+@log_function(args=False, result=False)
 def ReadFileContents(PathFile, MainBranch):
     try:
         NewLines = ReadLine(PathFile)
@@ -189,7 +189,7 @@ def ReadFileContents(PathFile, MainBranch):
             logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
             raise
 
-@log_function
+@log_function(args=False, result=False)
 def PatchLoadFromString(StringOfMarkdownContent):
     try:
         patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
@@ -201,7 +201,7 @@ def PatchLoadFromString(StringOfMarkdownContent):
         logger.error(f"Logic error: {e}")
         return []
 
-@log_function
+@log_function(args=False, result=False)
 def DetectProgrammingLanguage(FileNameSourceCode):
     try:
         ext = os.path.splitext(FileNameSourceCode)[1].lower()
@@ -212,7 +212,7 @@ def DetectProgrammingLanguage(FileNameSourceCode):
     except ValueError as e:
         logger.error(f"Logic error: {e}")
 
-@log_function
+@log_function(args=False, result=False)
 def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Match', 'Patch', 'SourceCode']):
     if TypeContent == 'Match':
         return MatchLoadFromString(ReadFile(FilePath))
@@ -221,7 +221,7 @@ def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Ma
     else:
         return ReadFile(FilePath)
 
-@log_function
+@log_function(args=False, result=False)
 def ComparingListsLength(matches, patches):
     try:
         if len(matches) != len(patches):
@@ -231,7 +231,7 @@ def ComparingListsLength(matches, patches):
         logger.error(f"Logic error: {e}")
         return False
 
-@log_function
+@log_function(args=False, result=False)
 def FindNthNOperators(string, StartIndex):
     result = ""
     if StartIndex >= len(string):
@@ -247,11 +247,11 @@ def FindNthNOperators(string, StartIndex):
             result = string[StartIndex: EndIndex + 2]
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def IsPassToN(Token):
     return re.fullmatch(r'\^[1-9]\d*\.\.', Token)
 
-@log_function
+@log_function(args=False, result=False)
 def InsertOperatorStatus(MatchTokenList):
     matches = [MatchToken for MatchToken in MatchTokenList if ">>>" in MatchToken]
     if matches:
@@ -276,7 +276,7 @@ def AddingTabs(string, CodeNestingLevel):
         if string[len(string) - 1] == "\n":
             string = string + '\t' * CodeNestingLevel
     return string
-@log_function
+@log_function(args=False, result=False)
 def GetFileOldAndNewVersion(FilePath):
     try:
         OldVersionResult = subprocess.run(
@@ -307,7 +307,7 @@ def GetFileOldAndNewVersion(FilePath):
     except Exception as e:
         logger.critical(f"An unknown error: {str(e)}")
 
-@log_function
+@log_function(args=False, result=False)
 def FilteringListByOccurrence(FilterableList, FilterList):
     FilteredList = [
         (start, end) for start, end in FilterableList

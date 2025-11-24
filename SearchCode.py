@@ -4,12 +4,12 @@ import copy
 import re
 from Logging import setup_logger, log_function
 
-logger = setup_logger(log_file='my_app.log')
+logger = setup_logger()
 
-@log_function
+@log_function(args=False, result=False)
 def SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList):
     try:
-        SourceCodeRelativeNestingLevel = {i: [0, True] for i in range(1, len(TokenInBetweenEllipsis(MatchTokenList)) + 1)}
+        SourceCodeRelativeNestingLevel = {i: [0, False] for i in range(1, len(TokenInBetweenEllipsis(MatchTokenList)) + 1)}
         IsPassDictionaryList = [{"IndexString": "", "CurrentSourceCodeTokenIndex": 0, "SourceCodeNestingLevel": 0, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel,"CurrentSourceCodeTokenStringIndex": 0, 'StartSourceCodeTokenIndex': 0, 'StartSourceCodeTokenStringIndex': 0, "CodeNestingLevel": 0}]
         IsInsertIndexDictionaryList = []
         IsReplaceIndexDictionaryList = []
@@ -36,7 +36,7 @@ def SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList):
         return  None
 
 
-@log_function
+@log_function(args=False, result=False)
 def CollectingResultsIndexInTokenList( IsInsertIndexDictionaryList, IsPassDictionaryList, IsReplaceIndexDictionaryList):
     try:
         result = {}
@@ -65,7 +65,7 @@ def CollectingResultsIndexInTokenList( IsInsertIndexDictionaryList, IsPassDictio
         logger.error(f"Logic error: {e}")
         return 0
 
-@log_function
+@log_function(args=False, result=False)
 def FindAllSubstringEnds(string, SubString, SubStringIndex):
     result = []
     while True:
@@ -76,7 +76,7 @@ def FindAllSubstringEnds(string, SubString, SubStringIndex):
         SubStringIndex = index + 1
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, SourceCodeTokenIndex, NestingMap, CurrentSourceCodeTokenStringIndex, SourceCodeNestingLevel, IndexString):
     BracketIndexInSourceCodeList = []
     ComparisonFlagFirstCircle = True
@@ -124,7 +124,7 @@ def ComparisonToken(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, Source
             CurrentSourceCodeTokenStringIndex = ComparisonSourceCodeTokenIndex - 1
     return   ComparisonSourceCodeNestingLevel, CompressionSourceCodeRelativeNestingLevel, CurrentSourceCodeTokenStringIndex, ComparisonSourceCodeTokenIndex, SubIndex -1, BracketIndexInSourceCodeList
 
-@log_function
+@log_function(args=False, result=False)
 def NestingLevelChange(NestingLevel, TokenList, TokenIndex):
 
     if TokenList[TokenIndex] in OPEN_NESTING_MARKERS:
@@ -135,7 +135,7 @@ def NestingLevelChange(NestingLevel, TokenList, TokenIndex):
 
     return NestingLevel
 
-@log_function
+@log_function(args=False, result=False)
 def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionary, FlagFirstCircle, NestingMap, BracketIndexInSourceCodeList):
     IsPassOutputDictionary = []
     LastSearchToken = len(MatchTokenList) - 1
@@ -160,12 +160,25 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
                 CounterMatches = 0
                 BreakFlag = False
                 BreakFlagCompression = False
+                IsThisNestingLevelExistFurther = False
+
+                if NestingMap[MatchTokenIndex + 1][0] <= -1:
+                    IsEllipsisEnd = False
+                    for NestingLevel,RelativeNestingLevel in NestingMap[MatchTokenIndex + 2:]:
+                        if NestingMap[MatchTokenIndex + 1][0] != NestingLevel:
+                            IsEllipsisEnd = True
+                        if IsEllipsisEnd and NestingMap[MatchTokenIndex + 1][0] == NestingLevel:
+                            IsThisNestingLevelExistFurther = True
+                            break
+
                 for SourceCodeTokenIndex in range(StartCurrentSourceCodeTokenIndex, len(SourceCodeTokenList)):
 
                     if MatchTokenIndex + 1 < len(MatchTokenList):
+                        for key in SourceCodeRelativeNestingLevel:
+                            if SourceCodeRelativeNestingLevel[key][1]:
+                                SourceCodeRelativeNestingLevel[key][0] = NestingLevelChange(SourceCodeRelativeNestingLevel[key][0], SourceCodeTokenList, SourceCodeTokenIndex)
+
                         if not FlagFirstCircle:
-                            if NestingMap[MatchTokenIndex + 1][0] <= -1  and SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] == False:
-                                SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0] = NestingLevelChange(SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0], SourceCodeTokenList, SourceCodeTokenIndex)
                             SourceCodeNestingLevel = NestingLevelChange(SourceCodeNestingLevel, SourceCodeTokenList, SourceCodeTokenIndex)
                         CodeNestingLevel = NestingLevelChange(CodeNestingLevel, SourceCodeTokenList, SourceCodeTokenIndex)
 
@@ -187,7 +200,7 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
                             StartSourceCodeRelativeNestingLevel = copy.deepcopy(SourceCodeRelativeNestingLevel)
                             StartSourceCodeNestingLevel = SourceCodeNestingLevel
                             StartCodeNestingLevel = CodeNestingLevel
-                            if NestingMap[MatchTokenIndex + 1][0] <= -1 and SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] == True:
+                            if NestingMap[MatchTokenIndex + 1][0] <= -1 and SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] == False:
                                 SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0] = NestingLevelChange(SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0], SourceCodeTokenList, SourceCodeTokenIndex)
                             if FlagFirstCircle:
                                 SourceCodeNestingLevel = NestingLevelChange(SourceCodeNestingLevel, SourceCodeTokenList, SourceCodeTokenIndex)
@@ -211,13 +224,20 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
 
                                         SourceCodeNestingLevel = StartSourceCodeNestingLevel
                                     else:
-                                        if NestingMap[SubIndex][1] == CompressionSourceCodeRelativeNestingLevel + SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] or NestingMap[SubIndex][1] == 0:
-                                            SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] = SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] + CompressionSourceCodeRelativeNestingLevel
+                                        if NestingMap[SubIndex][1] == CompressionSourceCodeRelativeNestingLevel + SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0]:
+                                            SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0] = SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0] + CompressionSourceCodeRelativeNestingLevel
+
+                                            for key in SourceCodeRelativeNestingLevel:
+                                                if SourceCodeRelativeNestingLevel[key][1] and key != -(NestingMap[SubIndex][0]):
+                                                    SourceCodeRelativeNestingLevel[key][0] = SourceCodeRelativeNestingLevel[key][0] + CompressionSourceCodeRelativeNestingLevel
+
                                             CurrentSourceCodeTokenIndex = ComparisonSourceCodeTokenIndex
                                             SourceCodeNestingLevel = SourceCodeNestingLevel + ComparisonSourceCodeNestingLevel
                                             BracketIndexInSourceCodeList.extend(ComparisonBracketIndexInSourceCodeList)
                                             CodeNestingLevel = CodeNestingLevel + ComparisonSourceCodeNestingLevel
-                                            if LastSearchToken + 2 < len(MatchTokenList) and NestingMap[LastSearchToken + 2][0] ==  NestingMap[MatchTokenIndex + 1][0]:
+                                            if IsThisNestingLevelExistFurther:
+                                                SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] = True
+                                            else:
                                                 SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] = False
                                             BreakFlagCompression, IsPassOutputDictionary, CounterMatches = AddToIsPassDictionary(MatchTokenList, MatchTokenIndex, SourceCodeTokenIndex, CurrentSourceCodeTokenIndex, CurrentSourceCodeTokenStringIndex, StartSourceCodeTokenStringIndex, SourceCodeNestingLevel, SourceCodeRelativeNestingLevel, IsPassOutputDictionary, IndexString, CounterMatches, CodeNestingLevel)
                                             if BreakFlagCompression:
@@ -235,7 +255,7 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
         FlagFirstCircle = False
     return IsPassOutputDictionary, FlagFirstCircle, BracketIndexInSourceCodeList
 
-@log_function
+@log_function(args=False, result=False)
 def AddToIsPassDictionary(MatchTokenList, MatchTokenIndex, SourceCodeTokenIndex, CurrentSourceCodeTokenIndex, CurrentSourceCodeTokenStringIndex, StartSourceCodeTokenStringIndex, SourceCodeNestingLevel, SourceCodeRelativeNestingLevel, IsPassOutputDictionary, IndexString, CounterMatches, CodeNestingLevel):
     NumberOccurrences = 0
     BreakFlagCompression = False
@@ -284,7 +304,7 @@ def AddToIsPassDictionary(MatchTokenList, MatchTokenIndex, SourceCodeTokenIndex,
 
     return BreakFlagCompression, IsPassOutputDictionary, CounterMatches
 
-@log_function
+@log_function(args=False, result=False)
 def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionaryList, FlagFirstCircle, NestingMap, BracketIndexInSourceCodeList):
     IsInsertIndexDictionaryList = []
     IsInsertOutputDictionaryList = []
@@ -299,9 +319,25 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
         IsPassDictionary = [IsPassDictionary]
 
         if  MatchTokenIndex > 0 and MatchTokenIndex + 1 < len(MatchTokenList) and MatchTokenList[MatchTokenIndex + 1] not in SPECIAL_OPERATORS  and not IsPassToN(MatchTokenList[MatchTokenIndex + 1]) and MatchTokenList[MatchTokenIndex - 1] not in SPECIAL_OPERATORS  and not IsPassToN(MatchTokenList[MatchTokenIndex - 1]):
-            MatchTokenEndsInSourceCodeTokenList = FindAllSubstringEnds(SourceCodeTokenList[CurrentSourceCodeTokenIndex], MatchTokenList[MatchTokenIndex + 1], CurrentSourceCodeTokenStringIndex)
+            IsThisNestingLevelExistFurther = False
+
             if NestingMap[MatchTokenIndex + 1][0] <= -1:
-                SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])] = NestingLevelChange(SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])], SourceCodeTokenList, CurrentSourceCodeTokenIndex)
+                IsEllipsisEnd = False
+                for NestingLevel, RelativeNestingLevel in NestingMap[MatchTokenIndex + 2:]:
+                    if NestingMap[MatchTokenIndex + 1][0] != NestingLevel:
+                        IsEllipsisEnd = True
+                    if IsEllipsisEnd and NestingMap[MatchTokenIndex + 1][0] == NestingLevel:
+                        IsThisNestingLevelExistFurther = True
+                        break
+
+            MatchTokenEndsInSourceCodeTokenList = FindAllSubstringEnds(SourceCodeTokenList[CurrentSourceCodeTokenIndex], MatchTokenList[MatchTokenIndex + 1], CurrentSourceCodeTokenStringIndex)
+            if NestingMap[MatchTokenIndex + 1][0] <= -1 and SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] == False:
+                SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0] = NestingLevelChange(SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][0], SourceCodeTokenList, CurrentSourceCodeTokenIndex)
+
+            for key in SourceCodeRelativeNestingLevel:
+                if SourceCodeRelativeNestingLevel[key][1]:
+                    SourceCodeRelativeNestingLevel[key][0] = NestingLevelChange(SourceCodeRelativeNestingLevel[key][0], SourceCodeTokenList, CurrentSourceCodeTokenIndex)
+
             SourceCodeNestingLevel = NestingLevelChange(SourceCodeNestingLevel, SourceCodeTokenList, CurrentSourceCodeTokenIndex)
             if MatchTokenEndsInSourceCodeTokenList:
                 StartSourceCodeTokenIndex = CurrentSourceCodeTokenIndex
@@ -324,11 +360,20 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
                                 IsInsertOutputDictionaryList.append({"IndexString": IndexString, "CurrentSourceCodeTokenIndex": CurrentSourceCodeTokenIndex, "SourceCodeNestingLevel": SourceCodeNestingLevel, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel, "CurrentSourceCodeTokenStringIndex": CurrentSourceCodeTokenStringIndex, 'StartSourceCodeTokenIndex': StartSourceCodeTokenIndex, 'StartSourceCodeTokenStringIndex': StartSourceCodeTokenStringIndex, "CodeNestingLevel": CodeNestingLevel})
                                 IsInsertIndexDictionaryList.append(FindIsInsertIndex(MatchTokenList, MatchTokenIndex, StartSourceCodeTokenStringIndex, StartSourceCodeTokenIndex, IndexString, SourceCodeTokenList, 'Next', CodeNestingLevel))
                         else:
-                            if NestingMap[SubIndex][1] == CompressionSourceCodeRelativeNestingLevel + SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] or NestingMap[SubIndex][1] == 0:
+                            if NestingMap[SubIndex][1] == CompressionSourceCodeRelativeNestingLevel + SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0]:
                                 CurrentSourceCodeTokenIndex = ComparisonSourceCodeTokenIndex
-                                SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] = SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex + 1][0])][0] + CompressionSourceCodeRelativeNestingLevel
+                                SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0] = SourceCodeRelativeNestingLevel[-(NestingMap[SubIndex][0])][0] + CompressionSourceCodeRelativeNestingLevel
+
+                                for key in SourceCodeRelativeNestingLevel:
+                                    if SourceCodeRelativeNestingLevel[key][1] and key != -(NestingMap[SubIndex][0]):
+                                        SourceCodeRelativeNestingLevel[key][0] = SourceCodeRelativeNestingLevel[key][0] + CompressionSourceCodeRelativeNestingLevel
+
                                 SourceCodeNestingLevel = SourceCodeNestingLevel + ComparisonSourceCodeNestingLevel
                                 BracketIndexInSourceCodeList.extend(ComparisonBracketIndexInSourceCodeList)
+                                if IsThisNestingLevelExistFurther:
+                                    SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] = True
+                                else:
+                                    SourceCodeRelativeNestingLevel[-(NestingMap[MatchTokenIndex + 1][0])][1] = False
                                 IsInsertOutputDictionaryList.append({"IndexString": IndexString, "CurrentSourceCodeTokenIndex": CurrentSourceCodeTokenIndex, "SourceCodeNestingLevel": SourceCodeNestingLevel, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel, "CurrentSourceCodeTokenStringIndex": CurrentSourceCodeTokenStringIndex, 'StartSourceCodeTokenIndex': StartSourceCodeTokenIndex, 'StartSourceCodeTokenStringIndex': StartSourceCodeTokenStringIndex, "CodeNestingLevel": CodeNestingLevel})
                                 IsInsertIndexDictionaryList.append(FindIsInsertIndex(MatchTokenList, MatchTokenIndex, StartSourceCodeTokenStringIndex, StartSourceCodeTokenIndex, IndexString, SourceCodeTokenList, 'Next', CodeNestingLevel))
 
@@ -360,7 +405,7 @@ def IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDiction
 
     return IsInsertIndexDictionaryList, IsInsertOutputDictionaryList, FlagFirstCircle, BracketIndexInSourceCodeList
 
-@log_function
+@log_function(args=False, result=False)
 def FindIsInsertIndex(MatchTokenList, MatchTokenIndex, CurrentSourceCodeTokenStringIndex, CurrentSourceCodeTokenIndex, IndexString, SourceCodeTokenList, InsertPosition, CodeNestingLevel):
     if  InsertPosition == 'Prev':
         if CurrentSourceCodeTokenStringIndex == 0:
@@ -371,7 +416,7 @@ def FindIsInsertIndex(MatchTokenList, MatchTokenIndex, CurrentSourceCodeTokenStr
         InsertIndex = {'IndexString': IndexString, 'CurrentSourceCodeTokenIndex': CurrentSourceCodeTokenIndex, 'CurrentSourceCodeTokenStringIndex': CurrentSourceCodeTokenStringIndex - len(MatchTokenList[MatchTokenIndex + 1]) + 1, 'InsertPosition': InsertPosition, "CodeNestingLevel": CodeNestingLevel}
     return InsertIndex
 
-@log_function
+@log_function(args=False, result=False)
 def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
     try:
         Result = {}
@@ -405,7 +450,7 @@ def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
         logger.error(f"Logic error: {e}")
         return 0
 
-@log_function
+@log_function(args=False, result=False)
 def GetBracketIndicesForEllipsis(MatchTokenList):
     result = []
     IsNestingMarkerPairsDictionary =UpdateUnpairedMarkers(MatchTokenList)
@@ -421,7 +466,7 @@ def GetBracketIndicesForEllipsis(MatchTokenList):
                 result.append({"EllipsisIndex": i, "BracketIndex": [(-1,-1)]})
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def MatchNestingLevelInsertALL(MatchTokenList):
     result = []
     CounterNesting = 0
@@ -440,7 +485,7 @@ def MatchNestingLevelInsertALL(MatchTokenList):
             result.append((CounterNesting, 0))
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def TokenInBetweenEllipsis(MatchTokenList):
     BracketIndicesForEllipsis = GetBracketIndicesForEllipsis(MatchTokenList)
     BetweenEllipsis = []
@@ -457,7 +502,7 @@ def TokenInBetweenEllipsis(MatchTokenList):
                 break
     return BetweenEllipsis
 
-@log_function
+@log_function(args=False, result=False)
 def CheckMatchNestingMarkerPairs(MatchTokenList):
     IsNestingMarkerPairsDictionary = {}
     stack = []
@@ -476,7 +521,7 @@ def CheckMatchNestingMarkerPairs(MatchTokenList):
                     break
     return IsNestingMarkerPairsDictionary
 
-@log_function
+@log_function(args=False, result=False)
 def UpdateUnpairedMarkers(MatchTokenList):
     IsNestingMarkerPairsDictionary = CheckMatchNestingMarkerPairs(MatchTokenList)
     ListLength = len(MatchTokenList)
@@ -498,7 +543,7 @@ def UpdateUnpairedMarkers(MatchTokenList):
             IsNestingMarkerPairsDictionary[index] = [False, NearestClosingIndex]
     return IsNestingMarkerPairsDictionary
 
-@log_function
+@log_function(args=False, result=False)
 def TokensInNestingMarkersAll(MatchTokenList):
     IsNestingMarkerPairsDictionary = UpdateUnpairedMarkers(MatchTokenList)
     MarkerList = [[index, IsPaired, PairedIndex] for index, [IsPaired, PairedIndex] in IsNestingMarkerPairsDictionary.items()]
@@ -523,7 +568,7 @@ def TokensInNestingMarkersAll(MatchTokenList):
         result.append(ClosestPair)
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def DictToTuples(MatchTokenList):
     result = []
     IsNestingMarkerPairsDictionary = UpdateUnpairedMarkers(MatchTokenList)
@@ -533,7 +578,7 @@ def DictToTuples(MatchTokenList):
             result.append(pair)
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def IndexNestingMarkersInSourceCode(MatchTokenList, MatchTokenIndex, StartSourceCodeTokenIndex, SubIndex, ComparisonSourceCodeNestingLevel, SourceCodeNestingLevel, IndexString):
     IndexNestingMarkersInSourceCodeList = []
     ListOfBrackets = DictToTuples(MatchTokenList)

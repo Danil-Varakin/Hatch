@@ -2,9 +2,9 @@ from SearchCode import SearchInsertIndexInSourceCode
 from Utilities import ReadFile, WriteFile, AddingTabs
 from Logging import setup_logger, log_function
 
-logger = setup_logger(log_file='my_app.log')
+logger = setup_logger()
 
-@log_function
+@log_function(args=False, result=False)
 def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath):
     SearchResult = SearchInsertIndexInSourceCode(Match, SourceCode)
     if not SearchResult:
@@ -18,7 +18,7 @@ def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath):
     else:
         return 1
 
-@log_function
+@log_function(args=False, result=False)
 def Replace(Patch, SourcePath, OutPath, SearchResult):
     try:
         ReplacePosition, ReplaceCount, ReplaceSearchString = SearchResult['Replace']
@@ -56,7 +56,7 @@ def Replace(Patch, SourcePath, OutPath, SearchResult):
         logger.error(f'Logic error: {e}')
         return 0
 
-@log_function
+@log_function(args=False, result=False)
 def Insert(Patch, SourcePath, OutPath, SearchResult):
     try:
         position, count, SearchString, CodeNestingLevel = SearchResult['Insert']

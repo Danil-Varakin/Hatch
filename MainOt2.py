@@ -1,16 +1,15 @@
-from ComprasionVersion import CompareFileVersions, AddInstruction, CreateMarkdownInstructions
+from ComprasionVersion import CompareFileVersions, CreateMarkdownInstructions
 from tree_sitter_language_pack import get_language, get_parser
-from Utilities import ReadFile, ReadLastGitCommit
+from Utilities import ReadLastGitCommit
+
 
 CPP_LANGUAGE = get_language('cpp')
 parser = get_parser('cpp')
 FilePath = r"test\PassedTests\unique13.cpp"
-fff = ReadFile(FilePath)
+OutPath = "unique13res.md"
 SourceCode = ReadLastGitCommit(FilePath, "development")
+print(SourceCode[5374:5608])
 ComparisonResult = CompareFileVersions(FilePath, SourceCode)
-Match = AddInstruction(FilePath, "development", parser, "cpp")
 print("Change:", ComparisonResult)
-print("Result:", Match)
 
-# Вызов функции для создания Markdown файла
-CreateMarkdownInstructions(FilePath, Match, ComparisonResult)
+CreateMarkdownInstructions(OutPath, FilePath,"development", parser, "cpp")
