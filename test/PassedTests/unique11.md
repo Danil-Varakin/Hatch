@@ -1,4 +1,4 @@
-### match:
+### match
 ```
 ...
 VerifiedContents::CreateFromFile(...) {

@@ -1,3 +1,5 @@
+from enum import Enum
+
 LOG_COLORS = {
         'DEBUG': 'cyan',
         'INFO': 'green',

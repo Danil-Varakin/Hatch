@@ -1,4 +1,4 @@
-### match:
+### match
 ```
 ...
 class Calculator {

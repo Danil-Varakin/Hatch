@@ -1,10 +1,10 @@
 import argparse
 import sys
 from Logging import setup_logger, log_function
-from ComprasionVersion import CompareFileVersions, CreateMarkdownInstructions
+from ComprasionVersion import CreateMarkdownInstructions, ParseDiffToChange
 from tree_sitter_language_pack import  get_parser
-from Utilities import ReadLastGitCommit, DetectProgrammingLanguage
-
+from Utilities import DetectProgrammingLanguage
+from gitUtils import ReadLastGitCommit
 logger = setup_logger()
 
 @log_function(args=False, result=False)
@@ -22,9 +22,6 @@ def ProcessGenerateMdMode(in_file, out_md, branch = None, language = None):
         PreviousSource = ReadLastGitCommit(in_file, effective_branch)
         if PreviousSource is None:
             raise ValueError(f"Не удалось найти файл {in_file} в ветке '{effective_branch}'")
-
-        ComparisonResult = CompareFileVersions(in_file, PreviousSource)
-        logger.info(f"Обнаруженные изменения: {ComparisonResult}")
 
         success = CreateMarkdownInstructions(out_md, in_file, effective_branch, parser, language)
 

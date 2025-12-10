@@ -1,10 +1,10 @@
 import os
 import re
+import importlib
+import subprocess
 from typing import Literal
 from constants import EXTENSIONS_FILE
-import subprocess
 from Logging import setup_logger, log_function
-import tempfile
 
 logger = setup_logger()
 
@@ -51,113 +51,6 @@ def WriteResultToMarkdown(output_file, match_result, change_dict):
         logger.error(f"Ошибка при записи в Markdown файл: {str(e)}")
         raise
 
-@log_function(args=False, result=False)
-def ReadLastGitCommit(PathFile, MainBranch):
-    try:
-        RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
-        OldContent = subprocess.check_output(
-            ["git", "show", f"{MainBranch}:{RepositoryPath}"],
-            text=True,
-            encoding="utf-8")
-        GitCommitFileContent = OldContent
-        return GitCommitFileContent
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
-        raise
-
-@log_function(args=False, result=False)
-def ReadLastGitCommitLines(PathFile, MainBranch):
-    try:
-        RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
-        OldContent = subprocess.check_output(
-            ["git", "show", f"{MainBranch}:{RepositoryPath}"],
-            text=True,
-            encoding="utf-8")
-        OldLines = OldContent.splitlines(keepends=True)
-        return OldLines
-    except subprocess.CalledProcessError as e:
-        if "exists on disk, but not in" in str(e):
-            logger.error(f"Файл {PathFile} отсутствует в ветке {MainBranch}.")
-        else:
-            logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def GetDiffOutput(FileLines, PathFile):
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as TemporaryFile:
-            TemporaryFile.writelines(FileLines)
-            OldFilePath = TemporaryFile.name
-        try:
-            DiffOutput = subprocess.check_output([
-                "git", "diff", "--word-diff", "--word-diff-regex=.*", "--ignore-all-space", "--no-index",
-                OldFilePath, PathFile],
-                text=True, encoding="utf-8")
-        except subprocess.CalledProcessError as e:
-            DiffOutput = e.output
-        finally:
-            os.unlink(OldFilePath)
-
-        if not DiffOutput:
-            raise ValueError(f"Нет различий в файле {PathFile} (или только пробелы)")
-        return FilterDiffOutput(DiffOutput)
-
-    except Exception as e:
-        logger.error(f"Ошибка при сравнении файлов {PathFile}: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def FilterDiffOutput(DiffOutput):
-    try:
-        lines = DiffOutput.splitlines()
-        InDiffBlock = False
-        change = []
-        StartIndexDiffBlock = []
-        for indexLineInDiff, line in enumerate(lines):
-            if line.startswith("@@"):
-                StartIndexDiffBlock.append([indexLineInDiff])
-                if InDiffBlock:
-                    StartIndexDiffBlock[-2].append(indexLineInDiff-1)
-                    if not change:
-                        StartIndexDiffBlock[-2].append(False)
-                    else:
-                        StartIndexDiffBlock[-2].append(True)
-                change = []
-                InDiffBlock = True
-                continue
-
-            if not InDiffBlock:
-                continue
-            pattern = re.compile(r"\[-.*?-]|\{\+.*?\+}", re.DOTALL)
-
-            for match in pattern.finditer(line):
-                ChangeStr = match.group(0)
-                changed = ChangeStr[2:-2]
-                changed = re.sub(r'[\s\x00-\x1F\x7F]', '', changed)
-                if changed:
-                    change.append(changed)
-        if not StartIndexDiffBlock:
-            return GetDiffOutput
-        if len(StartIndexDiffBlock[-1]) != 3:
-            StartIndexDiffBlock[-1].append(len(lines)-1)
-            if change:
-                StartIndexDiffBlock[-1].append(True)
-            else:
-                StartIndexDiffBlock[-1].append(False)
-        current_pos = 0
-        result = []
-        ISHaveChange = False
-        for start, end, keep in StartIndexDiffBlock:
-            if current_pos < start:
-                result.extend(lines[current_pos:start])
-            if keep:
-                result.extend(lines[start:end + 1])
-                ISHaveChange = True
-            current_pos = end + 1
-        return "\n".join(result) if ISHaveChange else 0
-    except Exception as e:
-        logger.error(f"Ошибка при фильтрации diff: {str(e)}")
-        return 0
 @log_function(args=False, result=False)
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
@@ -211,6 +104,16 @@ def DetectProgrammingLanguage(FileNameSourceCode):
         return Language
     except ValueError as e:
         logger.error(f"Logic error: {e}")
+
+@log_function(args=False, result=False)
+def LoadLanguageModule(language: str):
+    ModuleName = f'CompressionConstants_{language}'
+    try:
+        return importlib.import_module(ModuleName)
+    except ModuleNotFoundError:
+        raise ValueError(f'The module for the {language} language was not found. Check the {ModuleName}.py file')
+    except Exception as e:
+        raise RuntimeError(f'Error loading the module for {language}: {e}')
 
 @log_function(args=False, result=False)
 def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Match', 'Patch', 'SourceCode']):

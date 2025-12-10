@@ -12,32 +12,31 @@ EXCLUDED_TYPES = {
 DICTIONARY_SOLID_STRUCTURES = {
     "function_definition": [
         "compound_statement", "type_specifier", "type_identifier", "identifier",
-        "statement", "expression", ";", "{", "}", "(", ")", "primitive_type"
+        "statement", "expression", "primitive_type"
     ],
     "function_declaration": [
         "type_specifier", "function_declarator", "parameter_list", "identifier",
-        "type_identifier", ";", "(", ")", "storage_class_specifier", "type_qualifier"
+        "type_identifier", "storage_class_specifier", "type_qualifier"
     ],
     "method_declaration": [
         "type_specifier", "function_declarator", "parameter_list", "field_identifier",
-        "type_identifier", ";", "(", ")", "virtual", "override", "final", "const", "volatile"
+        "type_identifier", "virtual", "override", "final", "const", "volatile"
     ],
     "lambda_expression": [
         "lambda_capture_specifier", "compound_statement", "parameter_list",
-        "type_descriptor", "mutable", "exception_specification",
-        "[", "]", "(", ")", "{", "}", "->"
+        "type_descriptor", "mutable", "exception_specification"
     ],
     "call_expression": [
         "function", "argument_list", "identifier", "field_expression",
-        "template_function", "(", ")", ","
+        "template_function"
     ],
     "expression_statement": [
         "expression", "assignment_expression", "binary_expression", "unary_expression",
-        "call_expression", "identifier", "number_literal", "string_literal", ";"
+        "call_expression", "identifier", "number_literal", "string_literal"
     ],
     "if_statement": [
         "expression", "parenthesized_expression", "statement", "compound_statement",
-        "else_clause", "if", "else", "(", ")", "{", "}"
+        "else_clause", "if", "else"
     ],
     "elif_clause": [
         "else", "if", "expression", "parenthesized_expression", "statement", "compound_statement"
@@ -47,65 +46,65 @@ DICTIONARY_SOLID_STRUCTURES = {
     ],
     "for_statement": [
         "expression", "init_declarator", "statement", "compound_statement",
-        "for", "(", ")", ";", ",", "assignment_expression", "update_expression"
+        "for", "assignment_expression", "update_expression"
     ],
     "while_statement": [
         "expression", "parenthesized_expression", "statement", "compound_statement",
-        "while", "(", ")", "{", "}"
+        "while"
     ],
     "do_statement": [
         "statement", "compound_statement", "expression", "parenthesized_expression",
-        "do", "while", "(", ")", ";", "{", "}"
+        "do", "while"
     ],
     "switch_statement": [
         "expression", "parenthesized_expression", "statement", "compound_statement",
-        "case_statement", "switch", "case", "default", "(", ")", "{", "}"
+        "case_statement", "switch", "case", "default"
     ],
     "case_statement": [
-        "expression", "number_literal", "statement", "case", ":", "default"
+        "expression", "number_literal", "statement", "case", "default"
     ],
     "return_statement": [
-        "expression", "return", ";"
+        "expression", "return"
     ],
     "break_statement": [
-        "break", ";"
+        "break"
     ],
     "continue_statement": [
-        "continue", ";"
+        "continue"
     ],
     "goto_statement": [
-        "goto", "statement_identifier", ";"
+        "goto", "statement_identifier"
     ],
     "labeled_statement": [
-        "statement_identifier", "statement", ":", "case", "default"
+        "statement_identifier", "statement", "case", "default"
     ],
     "compound_statement": [
-        "statement", "expression_statement", "{", "}"
+        "statement", "expression_statement"
     ],
     "try_statement": [
         "try", "compound_statement", "catch_clause", "handler_sequence"
     ],
     "namespace_definition": [
-        "namespace", "name", "compound_statement", "identifier", "{", "}"
+        "namespace", "name", "compound_statement", "identifier"
     ],
     "class_specifier": [
         "class", "struct", "union", "type_identifier", "base_class_clause",
         "field_declaration_list", "field_declaration", "access_specifier",
-        "{", "}", ":", "public", "private", "protected"
+        "public", "private", "protected"
     ],
     "enum_specifier": [
-        "type_identifier", "enumerator_list", "enumerator", "enum", "{", "}", ","
+        "type_identifier", "enumerator_list", "enumerator", "enum"
     ],
     "struct_specifier": [
         "type_identifier", "field_declaration_list", "field_declaration",
-        "field_identifier", "struct", "{", "}", ";"
+        "field_identifier", "struct"
     ],
     "union_specifier": [
         "type_identifier", "field_declaration_list", "field_declaration",
-        "field_identifier", "union", "{", "}", ";"
+        "field_identifier", "union"
     ],
     "linkage_specification": [
-        "extern", "string_literal", "function_definition", "{", "}"
+        "extern", "string_literal", "function_definition"
     ],
     "attributed_statement": [
         "attribute_specifier", "attribute", "statement"
@@ -117,13 +116,13 @@ DICTIONARY_SOLID_STRUCTURES = {
         "__try", "compound_statement", "seh_except_clause", "seh_finally_clause"
     ],
     "seh_except_clause": [
-        "__except", "expression", "compound_statement", "(", ")"
+        "__except", "expression", "compound_statement"
     ],
     "seh_finally_clause": [
         "__finally", "compound_statement"
     ],
     "seh_leave_statement": [
-        "__leave", ";"
+        "__leave"
     ],
     "translation_unit": [
      "function_definition", "preproc_include", "preproc_def"
@@ -131,25 +130,25 @@ DICTIONARY_SOLID_STRUCTURES = {
     "gnu_asm_expression": [
         "__asm", "__asm__", "string_literal", "gnu_asm_input_operand",
         "gnu_asm_output_operand", "gnu_asm_clobber_list", "gnu_asm_goto_list",
-        "gnu_asm_qualifier", "(", ")", ":"
+        "gnu_asm_qualifier"
     ],
     "alignof_expression": [
-        "_alignof", "__alignof", "__alignof__", "type_identifier", "expression", "(", ")"
+        "_alignof", "__alignof", "__alignof__", "type_identifier", "expression"
     ],
     "sizeof_expression": [
-        "sizeof", "type_identifier", "expression", "(", ")"
+        "sizeof", "type_identifier", "expression"
     ],
     "offsetof_expression": [
-        "offsetof", "type_identifier", "field_identifier", "(", ")", ","
+        "offsetof", "type_identifier", "field_identifier"
     ],
     "cast_expression": [
-        "type_descriptor", "expression", "(", ")"
+        "type_descriptor", "expression"
     ],
     "compound_literal_expression": [
-        "type_descriptor", "initializer_list", "(", ")", "{", "}"
+        "type_descriptor", "initializer_list"
     ],
     "generic_expression": [
-        "_Generic", "expression", "type_descriptor", "(", ")", ","
+        "_Generic", "expression", "type_descriptor"
     ],
     "preproc_if": [
         "preproc_directive", "expression", "preproc_defined", "#if", "#endif",
@@ -181,17 +180,17 @@ DICTIONARY_SOLID_STRUCTURES = {
         "preproc_directive", "identifier", "preproc_arg"
     ],
     "type_definition": [
-        "type_specifier", "type_identifier", "_type_declarator", "typedef", ";"
+        "type_specifier", "type_identifier", "_type_declarator", "typedef"
     ],
     "template_declaration": [
         "template", "template_parameter_list", "function_definition",
         "class", "typename", "concept"
     ],
     "concept_definition": [
-        "concept", "type_identifier", "constraint_expression", "=", ";"
+        "concept", "type_identifier", "constraint_expression"
     ],
     "requires_expression": [
-        "requires", "parameter_list", "requirement_body", "{", "}"
+        "requires", "parameter_list", "requirement_body"
     ]
 }
 

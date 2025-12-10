@@ -1,264 +1,35 @@
 import os
-import re
 import tempfile
-import importlib
-from tree_sitter import Point
 from Insert import RunInsert
-from SearchCode import UpdateUnpairedMarkers
-from TokenizeCode import CheckAndRunTokenize
-from Utilities import ReadFile, GetDiffOutput, ReadLastGitCommit
+from tree_sitter import Point
 from constants import OPEN_NESTING_MARKERS
+from TokenizeCode import CheckAndRunTokenize
+from SearchCode import UpdateUnpairedMarkers
 from Logging import setup_logger, log_function
-
+from tree_sitter_language_pack import get_parser
+from Utilities import ReadFile, LoadLanguageModule
+from typing import Any, Optional, Dict, Tuple, Union
+from gitUtils import GetDiffOutput, ReadLastGitCommit
+from getChange import compare_files_from_point, UpdateChange, GetChange, GetChangeIndexes
 
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def LoadLanguageModule(language):
-    ModuleName = f'CompressionConstants_{language}'
+def SearchNodesWithChange(StartPoint: Any, EndPoint: Any, tree: Any) -> list[Any]:
     try:
-        return importlib.import_module(ModuleName)
-    except ModuleNotFoundError:
-        raise ValueError(f'The module for the {language} language was not found. Check the {ModuleName}.py file')
-    except Exception as e:
-        raise RuntimeError(f'Error loading the module for {language}: {e}')
-
-@log_function(args=False, result=False)
-def CompareFileVersions(PathFile, OldCode):
-    try:
-        DiffOutput = GetDiffOutput(OldCode, PathFile)
-        if not DiffOutput:
-            raise ValueError('No changes in the file')
-        Change = ParseDiffToTuples(DiffOutput, OldCode)
-        if Change:
-            return Change
-        else:
-            raise ValueError('No changes in the file')
-    except Exception as e:
-        logger.error(f"Error in CompareFileVersions: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def ParseDiffToTuples(DiffOutput, OldCode):
-    try:
-        result = []
-        lines = DiffOutput.splitlines()
-        LineNumberNewFile = 0
-        LineNumberOldFile = 0
-        InDiffBlock = False
-        FirstBlockProcessed = False
-        for indexLineInDiff, line in enumerate(lines):
-            if line.startswith("@@"):
-                if FirstBlockProcessed and result:
-                    break
-                FirstBlockProcessed = True
-                InDiffBlock = True
-                match = re.search(r"@@ -(\d+),\d+ \+(\d+),\d+ @@", line)
-                if match:
-                    LineNumberOldFile = int(match.group(1)) - 1
-                    LineNumberNewFile = int(match.group(2)) - 1
-                continue
-
-            if not InDiffBlock:
-                continue
-            if not (line.startswith('[-') and line.endswith('-]')):
-                LineNumberNewFile += 1
-            if not (line.startswith('{+') and line.endswith('+}')):
-                LineNumberOldFile += 1
-
-            change = []
-            pattern = re.compile(r"\[-.*?-]|\{\+.*?\+}", re.DOTALL)
-
-            for match in pattern.finditer(line):
-                ChangeStr = match.group(0)
-                if ChangeStr.startswith('[-'):
-                    deleted = ChangeStr[2:-2]
-                    IndexDict = FindStartEndPositionSubStringInStr(OldCode, deleted, LineNumberOldFile)
-                    change.append({'line': LineNumberOldFile, 'type': 'delete', 'start': IndexDict["StartIndex"], 'end': IndexDict["EndIndex"], 'added': '', 'deleted': deleted + "\n", "indexLineInDiff": indexLineInDiff})
-                else:
-                    added = ChangeStr[2:-2]
-                    if line.startswith('{+') and line.endswith("+}"):
-                        added = "\n" + added
-                    if change and change[-1]['type'] == "add":
-                        change.append({'line': LineNumberNewFile, 'type': 'add', 'start': change[-1]['start'], 'end': change[-1]['end'], 'added': added + "\n", 'deleted': '', "indexLineInDiff": indexLineInDiff})
-                    else:
-                        if not change and result and result[-1]["indexLineInDiff"] == indexLineInDiff - 1 and result[-1]["type"] == "add":
-                            change.append({'line': LineNumberNewFile, 'type': 'add', 'start': result[-1]['start'], 'end': result[-1]['end'], 'added': added + "\n", 'deleted': '', "indexLineInDiff": indexLineInDiff})
-                        else:
-                            IndexStartChange = line.find(ChangeStr) - 1
-                            LineBeforeChangeIndexDict = FindInsertStartIndexInOldCode(OldCode, LineNumberOldFile - 1, IndexStartChange)
-                            StartIndex = LineBeforeChangeIndexDict["LineBeforeChangeStartIndex"]
-                            EndIndex = LineBeforeChangeIndexDict["LineBeforeChangeEndIndex"]
-                            change.append({'line': LineNumberNewFile, 'type': 'add', 'start': StartIndex, 'end': EndIndex, 'added': added + "\n", 'deleted': '', "indexLineInDiff": indexLineInDiff})
-            result.extend(change)
-        if result:
-            result = MakeReplace(MergesActionsSameType(result, lines))
-            Change = result[0]
-            return Change
-        else:
-            return []
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return []
-
-
-@log_function(args=False, result=False)
-def FindInsertStartIndexInOldCode(OldCode, LineNumberOldFile, IndexStartChangeInDiff):
-    try:
-        OldCodeLines = OldCode.splitlines()
-        StartIndexOldLine = 0
-        for OldCodeLine in  OldCodeLines[:LineNumberOldFile]:
-            StartIndexOldLine += len(OldCodeLine) + 1
-        if IndexStartChangeInDiff <= 0:
-            LineBeforeChangeEndIndex = StartIndexOldLine + len(OldCodeLines[LineNumberOldFile])
-        else:
-            LineBeforeChangeEndIndex = StartIndexOldLine + IndexStartChangeInDiff + 1
-
-        i = 0
-        while OldCode[StartIndexOldLine: LineBeforeChangeEndIndex + 1].isspace() or OldCode[StartIndexOldLine: LineBeforeChangeEndIndex + 1] =="":
-            LineBeforeChangeEndIndex = StartIndexOldLine - len(OldCodeLines[LineNumberOldFile - i]) - 1
-            StartIndexOldLine = LineBeforeChangeEndIndex -  len(OldCodeLines[LineNumberOldFile - i - 1])
-            i += 1
-        return {"LineBeforeChangeStartIndex": StartIndexOldLine, "LineBeforeChangeEndIndex":LineBeforeChangeEndIndex}
-
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return {}
-
-
-
-@log_function(args=False, result=False)
-def MergesActionsSameType(Change,CodeLines):
-    try:
-        result = []
-        i = 0
-        while i < len(Change):
-            current = Change[i]
-            j =  1
-            Ratio = 0
-            while i+j < len(Change) and Change[i+j]['type'] == current['type'] and Change[i+j]['line'] == current['line'] + j + Ratio:
-                if current['type'] == 'add':
-                    current['added'] += Change[i+j]['added']
-                else:
-                    current['deleted'] += Change[i+j]['deleted']
-                current['end'] = Change[i+j]['end']
-                current['indexLineInDiff'] = Change[i+j]['indexLineInDiff']
-                if i+j < len(Change) and Change[i+j]['indexLineInDiff'] + Ratio + 1 < len(CodeLines):
-                    line = CodeLines[Change[i+j]['indexLineInDiff']  + Ratio + 1]
-                    while (line.isspace() or len(line) == 0) and Change[i+j]['indexLineInDiff'] + Ratio + 1 < len(CodeLines):
-                        Ratio += 1
-                        if i+j >= len(Change) or Change[i+j]['indexLineInDiff'] + Ratio + 1 >= len(CodeLines):
-                            break
-                        line = CodeLines[Change[i+j]['indexLineInDiff'] + Ratio + 1]
-                j += 1
-            result.append(current)
-            i = j + i
-        return result
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def MakeReplace(Change):
-    try:
-        result = []
-        i = 0
-        while i < len(Change):
-            if i + 1 < len(Change) and Change[i]['type'] == 'delete' and Change[i + 1]['type'] == 'add'   and 0 <= Change[i]['indexLineInDiff'] -  Change[i + 1]['indexLineInDiff'] <=1:
-                result.append({'line': Change[i + 1]['line'], 'type': 'replace', 'start': Change[i]['start'], 'end': Change[i]['end'], 'added': Change[i + 1]['added'], 'deleted': Change[i]['deleted']})
-                i += 2
-            else:
-                result.append(Change[i])
-                i += 1
-        return result
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def ComparisonLineIndex(indexInList, Changes):
-    try:
-        AddedLines = 0
-        DeletedLines = 0
-        for i in range(indexInList):
-            change = Changes[i]
-            AddedLines += change['added'].count('\n')
-            DeletedLines += change['deleted'].count('\n')
-        if  Changes[indexInList]['line'] - DeletedLines == Changes[indexInList + 1]['line'] - AddedLines:
-            return True
-        else:
-            return False
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def FindStartEndPositionSubStringInStr(CodeString, SubString, LineNumber):
-    try:
-        if not SubString:
-            raise ValueError("A substring cannot be empty")
-
-        CodeLines = CodeString.splitlines()
-        if LineNumber < 1 or LineNumber > len(CodeLines):
-            raise ValueError("The row number is out of the allowed range")
-
-        StartIndex = 0
-        for i in range(LineNumber - 1):
-            StartIndex += len(CodeLines[i]) + 1
-        while CodeLines[LineNumber - 1] == "":
-            LineNumber += 1
-        if CodeLines[LineNumber - 1].find(SubString) != -1:
-            StartIndex += CodeLines[LineNumber - 1].find(SubString)
-            EndIndex = StartIndex + len(SubString)
-            return {"StartIndex": StartIndex, "EndIndex": EndIndex}
-        else:
-            raise ValueError("The substring was not found in the string")
-
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return None
-
-@log_function(args=False, result=False)
-def SearchNodesWithChange(CodeAnalyze, change, parser):
-    try:
-        ChangeStart = change['start']
-        ChangeEnd = change["end"]
-        tree = GetASTTree(parser, CodeAnalyze)
-        if not tree:
-            raise ValueError(f"Syntax error in the file")
-
         NodesWithChangeList = []
         result = []
-        CurrentPositionStart = ChangeStart
-        while CurrentPositionStart < ChangeEnd and CodeAnalyze[CurrentPositionStart].isspace():
-            CurrentPositionStart += 1
-        PrefixStart = CodeAnalyze[:CurrentPositionStart+1]
-        LinesStartList = PrefixStart.splitlines(keepends=True)
-        StartLine = len(LinesStartList) - 1
-        StartCol = len(LinesStartList[-1])-1 if LinesStartList else 0
-
-        CurrentPositionEnd = ChangeEnd
-        while CurrentPositionEnd >= ChangeStart and CodeAnalyze[CurrentPositionEnd].isspace():
-            CurrentPositionEnd -= 1
-        PrefixEnd = CodeAnalyze[:CurrentPositionEnd+1]
-        LinesEnd = PrefixEnd.splitlines(keepends=True)
-        EndLine = len(LinesEnd) - 1
-        EndCol = len(LinesEnd[-1]) if LinesEnd else 0
-
-        StartPoint = Point(row=StartLine, column=StartCol)
-        EndPoint = Point(row=EndLine, column=EndCol)
-
         @log_function(args=False, result=False)
-        def FindNodeWithAllChange(node, depth=0):
+        def FindNodeWithAllChange(node: Any, depth: int = 0) -> None:
             candidate = node
-            best_child = None
+            BestChild = None
             for child in node.children:
                 if FullyContainsRange(child, StartPoint, EndPoint):
-                    best_child = child
+                    BestChild = child
                     break
 
-            if best_child is not None:
-                FindNodeWithAllChange(best_child, depth + 1)
+            if BestChild is not None:
+                FindNodeWithAllChange(BestChild, depth + 1)
             else:
                 FindStartEndNode(candidate, True)
                 if not NodesWithChangeList[0] == candidate:
@@ -271,7 +42,7 @@ def SearchNodesWithChange(CodeAnalyze, change, parser):
                     result.extend(NodesWithChangeList)
 
         @log_function(args=False, result=False)
-        def FindStartEndNode(node, IsStart):
+        def FindStartEndNode(node: Any, IsStart: bool) -> None:
             CurrentPoint = StartPoint if IsStart else EndPoint
             IsChildrenIncludesStartChange = False
             for child in node.children:
@@ -292,7 +63,30 @@ def SearchNodesWithChange(CodeAnalyze, change, parser):
         return []
 
 @log_function(args=False, result=False)
-def CoalesceEnclosingNodes(EnclosingNodes, root):
+def GetChangeStartEndPoint(CodeAnalyze: str, change: Dict[str, Any]) -> Any:
+    ChangeStart = change['start']
+    ChangeEnd = change["end"]
+
+    while ChangeStart < ChangeEnd and CodeAnalyze[ChangeStart].isspace():
+        ChangeStart += 1
+    PrefixStart = CodeAnalyze[:ChangeStart + 1]
+    LinesStartList = PrefixStart.splitlines(keepends=True)
+    StartLine = len(LinesStartList) - 1
+    StartCol = len(LinesStartList[-1]) - 1 if LinesStartList else 0
+
+    while ChangeEnd >= ChangeStart and CodeAnalyze[ChangeEnd].isspace():
+        ChangeEnd -= 1
+    PrefixEnd = CodeAnalyze[:ChangeEnd + 1]
+    LinesEnd = PrefixEnd.splitlines(keepends=True)
+    EndLine = len(LinesEnd) - 1
+    EndCol = len(LinesEnd[-1]) if LinesEnd else 0
+
+    StartPoint = Point(row=StartLine, column=StartCol)
+    EndPoint = Point(row=EndLine, column=EndCol)
+    return StartPoint, EndPoint
+
+@log_function(args=False, result=False)
+def CoalesceEnclosingNodes(EnclosingNodes: list[Any], root: Any) -> Union[list[Any], int]:
     try:
         changed = True
         while changed:
@@ -321,7 +115,7 @@ def CoalesceEnclosingNodes(EnclosingNodes, root):
         return 0
 
 @log_function(args=False, result=False)
-def FullyContainsRange(node, StartPoint, EndPoint):
+def FullyContainsRange(node: Any, StartPoint: Point, EndPoint: Point) -> bool:
     try:
         NodeStartPoint = node.start_point
         NodeEndPoint = node.end_point
@@ -335,7 +129,7 @@ def FullyContainsRange(node, StartPoint, EndPoint):
         return False
 
 @log_function(args=False, result=False)
-def CollectRightSiblingsAndUncles(node, StopAt):
+def CollectRightSiblingsAndUncles(node: Any, StopAt: Any) -> list[Any]:
     try:
         result = []
         cur = node
@@ -352,9 +146,10 @@ def CollectRightSiblingsAndUncles(node, StopAt):
         return result
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
+        return []
 
 @log_function(args=False, result=False)
-def CollectLeftSiblingsAndUncles(node, StopAt):
+def CollectLeftSiblingsAndUncles(node: Any, StopAt: Any) -> list[Any]:
     try:
         result = []
         cur = node
@@ -370,9 +165,10 @@ def CollectLeftSiblingsAndUncles(node, StopAt):
         return result
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
+        return []
 
 @log_function(args=False, result=False)
-def nodes_between_ancestors(lca, FirstNode, SecondNode):
+def NodesBetweenAncestors(lca: Any, FirstNode: Any, SecondNode: Any) -> list[Any]:
     try:
         between = []
         FirstChild = FirstNode
@@ -394,13 +190,14 @@ def nodes_between_ancestors(lca, FirstNode, SecondNode):
         return between
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
+        return  []
 
 @log_function(args=False, result=False)
-def GetNodesBetween(node1, node2, lca):
+def GetNodesBetween(node1: Any, node2: Any, lca: Any) -> list[Any]:
     try:
         right_from_first = CollectRightSiblingsAndUncles(node1, lca)
         left_from_second = CollectLeftSiblingsAndUncles(node2, lca)
-        middle_under_lca = nodes_between_ancestors(lca, node1, node2)
+        middle_under_lca = NodesBetweenAncestors(lca, node1, node2)
         all_nodes = right_from_first + left_from_second + middle_under_lca
         all_nodes.extend([node1, node2])
         seen = set()
@@ -416,10 +213,12 @@ def GetNodesBetween(node1, node2, lca):
         return unique_nodes
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
+        return []
 
 @log_function(args=False, result=False)
-def GetASTTree(parser, CodeString):
+def GetASTTree(CodeString: str, language):
     try:
+        parser = get_parser(language)
         tree = parser.parse(CodeString.encode('utf-8'))
         if tree.root_node.type == 'ERROR':
             raise ValueError(f"A syntax error in the . AST file contains an ERROR node.")
@@ -429,7 +228,7 @@ def GetASTTree(parser, CodeString):
         return None
 
 @log_function(args=False, result=False)
-def FindSiblingNodes(Nodes, IsInsertInBegin, language):
+def FindSiblingNodes(Nodes: list[Any], IsInsertInBegin: bool, language: str) -> Union[Dict[str, Optional[Any]], int]:
     try:
         if not Nodes:
             raise ValueError("The Nodes list is empty. No nodes to analyze.")
@@ -446,7 +245,7 @@ def FindSiblingNodes(Nodes, IsInsertInBegin, language):
         return 0
 
 @log_function(args=False, result=False)
-def IsIndependentNode(node, language):
+def IsIndependentNode(node: Any, language: str) -> Union[bool, int]:
     try:
         LanguageModule = LoadLanguageModule(language)
         if node is None:
@@ -459,7 +258,7 @@ def IsIndependentNode(node, language):
         return 0
 
 @log_function(args=False, result=False)
-def FindNearestStructure(node, NodeTypes):
+def FindNearestStructure(node: Any, NodeTypes: list[str]) -> Union[list[Dict[str, Any]], Dict]:
     try:
         NearestStructure = []
         CounterNesting = 0
@@ -479,32 +278,55 @@ def FindNearestStructure(node, NodeTypes):
         return {}
 
 @log_function(args=False, result=False)
-def AddInstruction(FilePath, MainBranch, parser, language):
+def FindParentConstructionALLType(NodesWithChange: Any, language: str) -> list[Any]:
+    try:
+        LanguageModule = LoadLanguageModule(language)
+        ParentStructuresWithLevels = []
+
+        for GroupStruct in [LanguageModule.FUNCTION_NODE_TYPES, LanguageModule.BRACKET_STRUCTURE_TYPES, LanguageModule.CONTROL_STRUCTURE_TYPES]:
+            NearestStructureDictionary = FindNearestStructure(NodesWithChange, GroupStruct)
+            for item in NearestStructureDictionary:
+                ParentStructuresWithLevels.append({"NestingLevel": item["CounterNesting"], "Structure": item["NearestStructure"]})
+
+        ParentStructuresWithLevels = [struct for struct in ParentStructuresWithLevels if not (struct["NestingLevel"] == float('inf') and struct["Structure"] is None)]
+        ParentStructuresWithLevels.sort(key=lambda x: x["NestingLevel"])
+        return [struct["Structure"] for struct in ParentStructuresWithLevels]
+
+    except Exception as e:
+        logger.error(f"Logic error: {str(e)}")
+        return []
+
+@log_function(args=False, result=False)
+def AddInstruction(FilePath: str, MainBranch: str, language: str) -> Dict[str, list[str]]:
     try:
         Match = []
-        NumberInsert = 0
-        SourceCode = ReadLastGitCommit(FilePath, MainBranch)
         Patch =[]
-        while GetDiffOutput(SourceCode, FilePath):
-            Change = CompareFileVersions(FilePath, SourceCode)
+        NumberInsert = 0
+        NewSourceCode = ReadFile(FilePath)
+        SourceCode = ReadLastGitCommit(FilePath, MainBranch)
+        while  compare_files_from_point(SourceCode, ReadFile(FilePath)):
+            DiffOutput = GetDiffOutput(SourceCode, FilePath)
+            ChangeLinesIndex = GetChangeIndexes(DiffOutput)
+            Change = GetChange(ChangeLinesIndex, SourceCode, NewSourceCode)
             if not Change:
-                raise ValueError("no changes found")
-            NodesWithChanges = SearchNodesWithChange(SourceCode, Change, parser)
+                raise ValueError("Changes no found")
+
+            tree = GetASTTree(SourceCode, language)
+            StartPoint, EndPoint = GetChangeStartEndPoint(SourceCode, Change)
+            NodesWithChanges = SearchNodesWithChange(StartPoint, EndPoint, tree)
+            
             UpdateChangeDict = UpdateChange(Change, NodesWithChanges, SourceCode, language)
             Change = UpdateChangeDict["Change"]
             IsInsertInBegin = UpdateChangeDict["IsInsertInBegin"]
             action = Change['type']
-            CommonParentStructure = []
+            
+            ParentStructureForChangeNode = []
             for NodesWithChange in NodesWithChanges:
-                NearestStructs = FindOldParentConstruction(NodesWithChange, language)
-                ParentStructure = []
-                for NearestStruct in NearestStructs:
-                    if NearestStruct["Structure"] is not None:
-                        ParentStructure.append(NearestStruct["Structure"])
-                if ParentStructure:
-                    CommonParentStructure.append(ParentStructure)
+                ParentStructure = FindParentConstructionALLType(NodesWithChange, language)
+                ParentStructureForChangeNode.append(ParentStructure)
+
             SiblingNodesDict = FindSiblingNodes(NodesWithChanges, IsInsertInBegin, language)
-            match = GenerateMatch(NodesWithChanges, SiblingNodesDict, CommonParentStructure, SourceCode, action, language)
+            match = GenerateMatch(NodesWithChanges, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action, language)
             if action == 'delete':
                 patch = ''
             else:
@@ -512,46 +334,20 @@ def AddInstruction(FilePath, MainBranch, parser, language):
             Patch.append(patch)
             print(match, "\n Patch: ", patch)
             SourceCode = VerificationInstruction(patch, match, SourceCode, language, NumberInsert)
+
+
             if not SourceCode:
                 raise ValueError('The match did`t work correctly')
             NumberInsert += 1
             Match.append(match)
+
         return {"Match": Match, "Patch": Patch}
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
-        return 0
+        return {}
 
 @log_function(args=False, result=False)
-def UpdateChange(Change, NodesWithChanges, SourceCode, language):
-    LanguageModule = LoadLanguageModule(language)
-    NodeText = ""
-    IsInsertInBegin = False
-    ChangeType = Change["type"]
-    for NodeWithChange in NodesWithChanges:
-        NodeText += NodeWithChange.text.decode('utf-8')
-    if ChangeType == "add":
-        ChangeText = SourceCode[Change["start"]: Change["end"] + 1]
-        if NodeText.find(ChangeText) == -1:
-            return {"Change": Change, "IsInsertInBegin": IsInsertInBegin}
-    else:
-        ChangeText = Change["deleted"]
-    if ''.join(NodeText.split()) != ''.join(ChangeText.split()):
-        for NodeWithChange in NodesWithChanges:
-            if NodeWithChange.type in LanguageModule.NESTED_STRUCTURES:
-                IsInsertInBegin = True
-                break
-        if not IsInsertInBegin:
-            ChangeTextIndex = NodeText.find(ChangeText)
-            Change["added"] = NodeText[:ChangeTextIndex ]  + NodeText[ChangeTextIndex + len(ChangeText):]
-            if ChangeType == "delete":
-                Change["type"] = "replace"
-    return {"Change": Change, "IsInsertInBegin": IsInsertInBegin}
-
-
-
-
-@log_function(args=False, result=False)
-def VerificationInstruction(Patch, Match, SourceCode, Language, NumberInsert):
+def VerificationInstruction(Patch: str, Match: str, SourceCode: str, Language: str, NumberInsert: int) -> str:
     TempFilePath = None
     try:
         with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as temp_file:
@@ -568,72 +364,41 @@ def VerificationInstruction(Patch, Match, SourceCode, Language, NumberInsert):
                 raise ValueError(f"Match № {NumberInsert}  not created")
     except ValueError as e:
         logger.error(f"Logic error: {str(e)}")
-        return 0
+        return ""
     except OSError as e:
         logger.error(f"Input/Output error: {str(e)}")
-        return 0
+        return ""
     finally:
         if TempFilePath:
-            try:
-                os.unlink(TempFilePath)
-                logger.debug(f"The file has been deleted: {TempFilePath}")
-            except OSError as e:
-                logger.error(f"Error when deleting a file {TempFilePath}: {str(e)}")
-
+            os.unlink(TempFilePath)
 
 @log_function(args=False, result=False)
-def FindOldParentConstruction(NodesWithChange, language):
-    try:
-        LanguageModule = LoadLanguageModule(language)
-        NearestStructureDictionary = FindNearestStructure(NodesWithChange, LanguageModule.FUNCTION_NODE_TYPES)
-        NestingLevelStruct = [d["CounterNesting"] for d in NearestStructureDictionary]
-        NearestStructNode = [d["NearestStructure"] for d in NearestStructureDictionary]
-
-        NearestStructureDictionary = FindNearestStructure(NodesWithChange, LanguageModule.FUNCTION_NODE_TYPES)
-        NearestStructNode.extend([d["NearestStructure"] for d in NearestStructureDictionary])
-        NestingLevelStruct.extend([d["CounterNesting"] for d in NearestStructureDictionary])
-
-        NearestStructureDictionary = FindNearestStructure(NodesWithChange, LanguageModule.BRACKET_STRUCTURE_TYPES)
-        NearestStructNode.extend([d["NearestStructure"] for d in NearestStructureDictionary])
-        NestingLevelStruct.extend([d["CounterNesting"] for d in NearestStructureDictionary])
-
-        NearestStructs = [{"NestingLevel": level, "Structure": node}for level, node in zip(NestingLevelStruct, NearestStructNode)]
-        NearestStructs = sorted(NearestStructs, key=lambda x: x["NestingLevel"])
-        NearestStructs = [ struct for struct in NearestStructs if not (struct["NestingLevel"] == float('inf') and struct["Structure"] is None)]
-        return NearestStructs
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return 0
-
-@log_function(args=False, result=False)
-def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action, language):
+def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action, language) -> str:
     LanguageModule = LoadLanguageModule(language)
     CollectingMatchListDict = CollectingMatchList(NodesWithChanges, NearestStructs, siblings, language)
     MatchList = CollectingMatchListDict["SortedNodes"]
     ParentNodeList = CollectingMatchListDict["ParentNodeList"]
     ParentCloseIndexes = FindLastNodeInParent(MatchList, ParentNodeList, SourceCode, language)
-    MatchString = ""
+    MatchString = "..."
     ISAction = True if action == "add" else False
     ParentOpenIndex = {GetNodeText(ParentCloseIndex[2], SourceCode).split(BracketToNodeTypes(ParentCloseIndex[2], LanguageModule.BRACKET_TO_NODE_TYPES))[0].strip(): -1 for ParentCloseIndex in ParentCloseIndexes}
-    for i, (node, NodeType) in enumerate(MatchList):
 
+    for i, (node, NodeType) in enumerate(MatchList):
+        IsNonEllipsisTail = MatchString[-4:-1]  != "..." or MatchString[-3:len(MatchString)] != "..."
         NextNode, NextType = 0, 0
         if i + 1 < len(MatchList):
             NextNode, NextType = MatchList[i + 1]
 
         if NodeType == 'ParentNode':
             ParentBracketType = BracketToNodeTypes(node, LanguageModule.BRACKET_TO_NODE_TYPES)
-
-            if len(MatchString) > 3 and  MatchString[-4: -1] != "..." or len(MatchString) < 3:
+            if not IsNonEllipsisTail:
                 MatchString += "\n ... "
             MatchString += f"\n { GetNodeText(node, SourceCode).split(ParentBracketType)[0].strip()} "
             MatchString += f" \n {ParentBracketType} ... "
 
         elif NodeType == 'NodeWithChange':
             if i == 0:
-                MatchString += ' \n ... '
-                if not ISAction:
-                    MatchString += "\n >>> "
+                MatchString += "\n>>>"
             MatchString += f"\n {GetNodeText(node, SourceCode)} "
             IsNextExist = len(MatchList) > i + 1
             if IsNextExist and NextType in ["ParentNode", 'SiblingNode']  or not NextType:
@@ -645,18 +410,17 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
                         MatchString += "\n ... "
 
         elif NodeType == 'SiblingNode':
-            if len(MatchString) > 3 and  MatchString[-4: -1] != "..."  and i > 0 and  MatchList[i-1][1] != "NodeWithChange" or len(MatchString) < 3:
+            if not IsNonEllipsisTail and i > 0 and MatchList[i-1][1] != "NodeWithChange":
                 MatchString += " \n... "
             MatchString += f"\n{GetNodeText(node, SourceCode)}"
             if NextNode and not NextType == "NodeWithChange" or not NextNode:
                 MatchString +=  "\n ... "
 
-        if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange":
-            if not ISAction:
-                if len(MatchString) > 3 and  MatchString[-4: -1] != "..." and NodeType != "SiblingNode" or len(MatchString) < 3:
-                    MatchString += f'\n ... >>> '
-                else:
-                    MatchString += f"\n  >>> "
+        if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not ISAction:
+            if not IsNonEllipsisTail and NodeType != "SiblingNode":
+                MatchString += f'\n ... >>> '
+            else:
+                MatchString += f"\n  >>> "
 
         for ParentCloseIndex in ParentCloseIndexes:
             if ParentCloseIndex[0] == i:
@@ -679,36 +443,39 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
                     MatchString += " ] ..."
                 elif MatchStringTokenList[ParentOpenIndexList[i][1]] == "<":
                     MatchString += " > ..."
-    if len(MatchString) > 3 and MatchString[-4:-1] != "...":
+
+    IsNonEllipsisTail = MatchString[-4:-1] != "..."
+    if not IsNonEllipsisTail:
         MatchString += " ..."
     return MatchString
 
-def BracketToNodeTypes(node, typesSet):
+def BracketToNodeTypes(node: Any, typesSet: Dict[str, str]) -> Optional[str]:
     if node.type in typesSet["{"]:
         return "{"
     elif node.type in typesSet["("]:
         return "("
     elif node.type in typesSet["["]:
         return "["
-    elif node.type in typesSet["<"]:
+    else:
         return "<"
 
 @log_function(args=False, result=False)
-def GetNodeText(node, SourceCode):
+def GetNodeText(node: Any, SourceCode: str) -> str:
     try:
-        return SourceCode[node.start_byte:node.end_byte]
+        source_bytes = SourceCode.encode('utf-8')
+        return source_bytes[node.start_byte:node.end_byte].decode('utf-8')
     except Exception as expt:
         raise ValueError(f"Could`nt extract the node text at the positions {node.start_byte}:{node.end_byte}: {expt}")
 
 @log_function(args=False, result=False)
-def IsNodeWholeConstruction(ParentNode, ChildNode, language):
+def IsNodeWholeConstruction(ParentNode: Any, ChildNode: Any, language: str) -> bool:
     LanguageModule = LoadLanguageModule(language)
     if ParentNode.type not in LanguageModule.DICTIONARY_SOLID_STRUCTURES:
         return True
     return ChildNode.type not in LanguageModule.DICTIONARY_SOLID_STRUCTURES[ParentNode.type]
 
 @log_function(args=False, result=False)
-def CollectingMatchList(NodesWithChanges, NearestStructs, siblings, language):
+def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[Any]], siblings: Dict[str, Optional[Any]], language: str) -> Union[Dict[str, list], int]:
     try:
         NodePositions = {}
         BlockParent = []
@@ -730,50 +497,61 @@ def CollectingMatchList(NodesWithChanges, NearestStructs, siblings, language):
         if NextForLast:
             NodePositions[NextForLast] = ((NextForLast.start_point[0], NextForLast.start_point[1]), 'SiblingNode')
 
-        SortedNodes = sorted(
-            [(node, NodeType) for node, (pos, NodeType) in NodePositions.items()],
-            key=lambda x: NodePositions[x[0]][0]
-        )
-        return {"SortedNodes": SortedNodes, "ParentNodeList": ParentNodeList}
+        SortedNodes = sorted([(node, NodeType) for node, (pos, NodeType) in NodePositions.items()], key=lambda x: NodePositions[x[0]][0])
+
+        FilteredNodes = []
+        FoundImportant = False
+        for node, NodeType in SortedNodes:
+            if NodeType in ('SiblingNode', 'NodeWithChange'):
+                FoundImportant = True
+            if NodeType != 'ParentNode' or not FoundImportant:
+                FilteredNodes.append((node, NodeType))
+
+        return {"SortedNodes": FilteredNodes, "ParentNodeList": ParentNodeList}
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
         return 0
 
 @log_function(args=False, result=False)
-def FindLastNodeInParent(MatchNodeList, ParentList, SourceCode, language):
+def FindLastNodeInParent(MatchNodeList: list[Tuple[Any, str]], ParentList: list[Any], SourceCode: str, language: str) -> list[Tuple[int, int, Any]]:
     try:
         LanguageModule = LoadLanguageModule(language)
-        ParentCloseIndex = {ParentNode: None for ParentNode in ParentList}
+        ParentCloseIndex = {ParentNode: (0, 0) for ParentNode in ParentList}
         IsFirstForNode = {ParentNode: True for ParentNode in ParentList}
+
         for i in range(len(MatchNodeList)):
             node, _ = MatchNodeList[i]
             for ParentNode in ParentList:
                 if ParentNode.start_point[0] <= node.start_point[0] <= ParentNode.end_point[0]:
                     BracketType = BracketToNodeTypes(ParentNode, LanguageModule.BRACKET_TO_NODE_TYPES)
-                    if IsFirstForNode[ParentNode] or GetNodeText(node, SourceCode) in GetNodeText(ParentNode, SourceCode).split(BracketType)[0].strip():
+                    if IsFirstForNode[ParentNode] or GetNodeText(node, SourceCode) in \
+                            GetNodeText(ParentNode, SourceCode).split(BracketType)[0].strip():
+                        NextNode = None
                         if len(MatchNodeList) > i + 1:
-                            NextNode, _= MatchNodeList[i+1]
-                        else:
-                            NextNode = 0
+                            NextNode, _ = MatchNodeList[i + 1]
+
                         ParentCloseIndex[ParentNode] = (i, i)
                         IsFirstForNode[ParentNode] = False
+
                         if NextNode and GetNodeText(NextNode, SourceCode) == BracketType:
-                            ParentCloseIndex[ParentNode] = (i+1, i)
+                            ParentCloseIndex[ParentNode] = (i + 1, i)
                     else:
-                        ParentCloseIndex[ParentNode] = (ParentCloseIndex[ParentNode][0], i)
-        ParentCloseIndex = [(v1, v2, k) for k, (v1, v2) in ParentCloseIndex.items()]
+                        current_start, _ = ParentCloseIndex[ParentNode]
+                        ParentCloseIndex[ParentNode] = (current_start, i)
+
+        ParentCloseIndex = [(v1, v2, ParentNode) for ParentNode, (v1, v2) in ParentCloseIndex.items()]
         ParentCloseIndex = sorted(ParentCloseIndex, key=lambda x: x[2].start_point, reverse=True)
         return ParentCloseIndex
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
-        return 0
+        return []
 
 
 
 @log_function(args=False, result=False)
-def CreateMarkdownInstructions(OutPath, FilePath, MainBranch, parser, language):
+def CreateMarkdownInstructions(OutPath: str, FilePath: str, MainBranch: str, language: str) -> bool:
     try:
-        AddInstructionDict = AddInstruction(FilePath, MainBranch, parser, language)
+        AddInstructionDict = AddInstruction(FilePath, MainBranch, language)
         if not AddInstructionDict:
             raise ValueError("There are no instructions ")
         Match = AddInstructionDict["Match"]

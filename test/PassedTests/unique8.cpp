@@ -9,6 +9,7 @@ void f () {
          std::cout << "edf";
          77
     int
+    register
   }- 9
   zxc
   66 -- () 33

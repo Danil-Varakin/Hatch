@@ -5,21 +5,18 @@ from Logging import setup_logger, log_function
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath):
+def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath, returnChangeEndIndex=False):
     SearchResult = SearchInsertIndexInSourceCode(Match, SourceCode)
     if not SearchResult:
         return 0
     if "Replace" in SearchResult:
-        CompletionStatus = Replace(Patch, SourcePath, OutPath, SearchResult)
+        CompletionStatus = Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex)
     else:
-        CompletionStatus = Insert(Patch, SourcePath, OutPath, SearchResult)
-    if CompletionStatus == 0:
-        return 0
-    else:
-        return 1
+        CompletionStatus = Insert(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex)
+    return CompletionStatus
 
 @log_function(args=False, result=False)
-def Replace(Patch, SourcePath, OutPath, SearchResult):
+def Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False):
     try:
         ReplacePosition, ReplaceCount, ReplaceSearchString = SearchResult['Replace']
         InsertPosition, InsertCount, InsertSearchString, CodeNestingLevel = SearchResult['Insert']
@@ -45,19 +42,24 @@ def Replace(Patch, SourcePath, OutPath, SearchResult):
         Patch = AddingTabs(Patch, CodeNestingLevel)
         if InsertPosition == 'Prev' and ReplacePosition == 'Next':
             ModifiedContent = SourceContent[:InsertIndex + len(InsertSearchString)] + Patch + SourceContent[ReplaceIndex:]
+            ChangeEndIndex = InsertIndex + len(InsertSearchString) + len(Patch)
         elif InsertPosition == 'Next' and ReplacePosition == 'Next':
             ModifiedContent = SourceContent[:InsertIndex] + Patch + SourceContent[ReplaceIndex:]
+            ChangeEndIndex = InsertIndex  + len(Patch)
         else:
             ModifiedContent = SourceContent[:InsertIndex] + Patch + SourceContent[ReplaceIndex + len(ReplaceSearchString):]
-
+            ChangeEndIndex = InsertIndex + len(Patch)
         WriteFile(OutPath, ModifiedContent)
-        return 1
+        if returnChangeEndIndex:
+            return 1, ChangeEndIndex
+        else:
+            return 1
     except ValueError as e:
         logger.error(f'Logic error: {e}')
         return 0
 
 @log_function(args=False, result=False)
-def Insert(Patch, SourcePath, OutPath, SearchResult):
+def Insert(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False):
     try:
         position, count, SearchString, CodeNestingLevel = SearchResult['Insert']
         SourceContent = ReadFile(SourcePath)
@@ -71,17 +73,21 @@ def Insert(Patch, SourcePath, OutPath, SearchResult):
                 if OccurrenceCount == count:
                     CharPosition = i
                     break
-
         if CharPosition == -1:
             raise ValueError('Insertion position not found')
         Patch = AddingTabs(Patch, CodeNestingLevel)
+        ChangeEndIndex = 0
         if position == 'Next':
             ModifiedContent = SourceContent[:CharPosition] + Patch + SourceContent[CharPosition:]
+            ChangeEndIndex = CharPosition + len(Patch)
         elif position == 'Prev':
             ModifiedContent = SourceContent[:CharPosition + len(SearchString)] + Patch + SourceContent[CharPosition + len(SearchString):]
-
+            ChangeEndIndex = CharPosition + len(SearchString) + len(Patch)
         WriteFile(OutPath, ModifiedContent)
-        return 1
+        if returnChangeEndIndex:
+            return 1, ChangeEndIndex
+        else:
+            return 1
     except ValueError as e:
         logger.error(f'Logic error: {e}')
         return 0
