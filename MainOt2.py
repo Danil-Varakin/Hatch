@@ -1,10 +1,10 @@
-from ComprasionVersion import CreateMarkdownInstructions
+from ComprasionVersion import  AddInstruction
+from ComprasionInput  import CreateMarkdownInstructions
 from Utilities import  ReadFile
-from getChange import  GetChange
-from gitUtils import ReadLastGitCommit, GetDiffOutput
-FilePath = r"test/PassedTests/unique13.cpp"
+from gitUtils import ReadLastGitCommit
+FilePath = r"test/PassedTests/unique16.cpp"
 OutPath = "unique13res.md"
 SourceCode = ReadLastGitCommit(FilePath, "origin/development")
 S2 = ReadFile(FilePath)
-print(SourceCode[3326:3377])
-CreateMarkdownInstructions(OutPath, FilePath,"origin/development", "cpp")
+Match, Patch = AddInstruction( FilePath,"origin/development", "gn")
+CreateMarkdownInstructions(OutPath, Match, Patch)

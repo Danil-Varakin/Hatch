@@ -1,4 +1,3 @@
-from enum import Enum
 
 LOG_COLORS = {
         'DEBUG': 'cyan',
@@ -27,7 +26,9 @@ OPEN_NESTING_MARKERS = [ "{", "(", "["]
 
 CLOSE_NESTING_MARKERS = ["}", ")", "]"]
 
-DICTIONARY_NESTING_MARKERS = {')': '(', '}': '{', ']': '['}
+CLOSE_TO_OPEN_NESTING_MARKERS = {')': '(', '}': '{', ']': '['}
+
+OPEN_TO_CLOSE_NESTING_MARKERS = {'(': ')', '{': '}', '[': ']'}
 
 EXTENSIONS_FILE = {
     '.py': 'python', '.java': 'java', '.cpp': 'cpp',

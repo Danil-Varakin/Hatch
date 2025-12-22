@@ -49,8 +49,17 @@ def GetDiffOutput(FileLines, FilePath):
             OldFilePath = TemporaryFile.name
         try:
             DiffOutput = subprocess.check_output([
-                "git", "diff", "--diff-algorithm=histogram",  "--ignore-all-space", "--no-index", OldFilePath, GitPath],
-                text=True, encoding="utf-8")
+                "git", "diff",
+                "--no-color",  # без цветов
+                "--no-prefix",  # без a/ b/
+                "--no-index",  # сравнить файлы вне репозитория
+                "--no-ext-diff",  # без внешних diff программ
+                "--no-renames",  # без определения переименований (убрал пробел!)
+                "--ignore-all-space",  # игнорировать пробелы (достаточно одного флага)
+                "--diff-algorithm=histogram",  # алгоритм diff
+                OldFilePath,
+                GitPath
+            ], text=True, encoding="utf-8")
         except subprocess.CalledProcessError as e:
             DiffOutput = e.output
         finally:

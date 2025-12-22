@@ -7,11 +7,7 @@ from typing import Any, Optional, Dict, Tuple
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def is_whitespace(char: str) -> bool:
-    return char in (' ', '\t', '\n', '\r', '\v', '\f')
-
-@log_function(args=False, result=False)
-def get_next_char(row: int, col: int, lines: list) -> Tuple[Optional[str], int, int]:
+def GetNextChar(row: int, col: int, lines: list) -> Tuple[Optional[str], int, int]:
     if row >= len(lines):
         return None, row, col
     line = lines[row]
@@ -21,34 +17,34 @@ def get_next_char(row: int, col: int, lines: list) -> Tuple[Optional[str], int, 
         return '\n', row + 1, 0
 
 @log_function(args=False, result=False)
-def skip_whitespace(row: int, col: int, lines: list) -> Tuple[Optional[str], int, int]:
+def SkipWWhitespace(row: int, col: int, lines: list) -> Tuple[Optional[str], int, int]:
     while True:
-        char, next_row, next_col = get_next_char(row, col, lines)
+        char, NextRow, NextCol = GetNextChar(row, col, lines)
         if char is None:
-            return None, next_row, next_col
-        if not is_whitespace(char):
-            return char, next_row, next_col
-        row, col = next_row, next_col
+            return None, NextRow, NextCol
+        if not char.isspace():
+            return char, NextRow, NextCol
+        row, col = NextRow, NextCol
 
 @log_function(args=False, result=False)
-def compare_files_from_point(old_content: str, new_content: str, start_point: tree_sitter.Point = tree_sitter.Point(row=0, column=0)) -> Optional[tree_sitter.Point]:
-    old_lines = old_content.split('\n')
-    new_lines = new_content.split('\n')
-    old_row = start_point.row
-    old_col = start_point.column
-    new_row = start_point.row
-    new_col = start_point.column
+def CompareFilesFromPoint(old_content: str, new_content: str, start_point: tree_sitter.Point = tree_sitter.Point(row=0, column=0)) -> Optional[tree_sitter.Point]:
+    OldLines = old_content.split('\n')
+    NewLines = new_content.split('\n')
+    OldRow = start_point.row
+    OldCol = start_point.column
+    NewRow = start_point.row
+    NewCol = start_point.column
 
     while True:
-        old_char, old_row, old_col = skip_whitespace(old_row, old_col, old_lines)
-        new_char, new_row, new_col = skip_whitespace(new_row, new_col, new_lines)
-        if old_char is None and new_char is None:
+        OldChar, OldRow, OldCol = SkipWWhitespace(OldRow, OldCol, OldLines)
+        NewChar, NewRow, NewCol = SkipWWhitespace(NewRow, NewCol, NewLines)
+        if OldChar is None and NewChar is None:
             return None
-        if old_char != new_char:
-            if old_char is not None:
-                return tree_sitter.Point(row=old_row, column=old_col - 1)
+        if OldChar != NewChar:
+            if OldChar is not None:
+                return tree_sitter.Point(row=OldRow, column=OldCol - 1)
             else:
-                return tree_sitter.Point(row=old_row, column=old_col)
+                return tree_sitter.Point(row=OldRow, column=OldCol)
 
 @log_function(args=False, result=False)
 def GetChangeIndexes(DiffOutput: str) -> list[tuple[Any]]:
@@ -64,14 +60,17 @@ def GetChangeIndexes(DiffOutput: str) -> list[tuple[Any]]:
                 if InDiffBlock and ChangeLinesIndex:
                     break
                 InDiffBlock = True
-                match = re.search(r"@@ -(\d+),\d+ \+(\d+),\d+ @@", line)
+                match = re.search(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', line)
                 if match:
                     OldLineNum = int(match.group(1)) - 1
-                    NewLineNum = int(match.group(2)) - 1
+                    NewLineNum = int(match.group(3)) - 1
                 continue
 
             if not InDiffBlock:
                 continue
+            if any(line.startswith(prefix) for prefix in ['diff --git', 'index ', '---', '+++', 'Binary files', '\\']):
+                continue
+
             if line.startswith("-"):
                 if line.strip() != '-':
                     ChangeLinesIndex.append(({"OldLineIndex":OldLineNum, "NewLineIndex":NewLineNum},'del'))
@@ -102,7 +101,6 @@ def GetChange(ChangeLinesIndex: list[tuple[Any]], OldCode: str, NewCode: str) ->
                 OldLineIndex = ChangeLineIndex["OldLineIndex"]
                 ChangeLine = OldCode.splitlines()[OldLineIndex]
                 IndexDict = FindStartEndPositionSubStringInStr(OldCode, ChangeLine, OldLineIndex)
-                print(OldCode[IndexDict["StartIndex"]:IndexDict["EndIndex"]+1])
                 Changes.append({ 'type': 'delete', 'start': IndexDict["StartIndex"], 'end': IndexDict["EndIndex"], 'added': '', 'deleted': ChangeLine, "NewLineIndex": NewLineIndex})
             else:
                 NewLineIndex = ChangeLineIndex["NewLineIndex"]
@@ -158,6 +156,9 @@ def FindStartEndPositionSubStringInStr(CodeString: str, SubString: str, LineNumb
         StartIndex = 0
         for i in range(LineNumber):
             StartIndex += len(CodeLines[i]) + 1
+        if len(CodeLines) - 1 == LineNumber:
+            StartIndex -= 1
+
         while CodeLines[LineNumber] == "":
             LineNumber += 1
         if CodeLines[LineNumber].find(SubString) != -1:

@@ -1,7 +1,8 @@
 import argparse
 import sys
 from Logging import setup_logger, log_function
-from ComprasionVersion import CreateMarkdownInstructions, ParseDiffToChange
+from ComprasionVersion import  AddInstruction
+from ComprasionInput  import CreateMarkdownInstructions
 from tree_sitter_language_pack import  get_parser
 from Utilities import DetectProgrammingLanguage
 from gitUtils import ReadLastGitCommit
@@ -23,13 +24,16 @@ def ProcessGenerateMdMode(in_file, out_md, branch = None, language = None):
         if PreviousSource is None:
             raise ValueError(f"Не удалось найти файл {in_file} в ветке '{effective_branch}'")
 
-        success = CreateMarkdownInstructions(out_md, in_file, effective_branch, parser, language)
+        Match, Patch = AddInstruction( in_file, effective_branch, language)
+        if Match and Patch:
+            success = CreateMarkdownInstructions(out_md, Match, Patch)
 
-        if success:
-            logger.info(f"Markdown-инструкции успешно созданы: {out_md}")
+            if success:
+                logger.info(f"Markdown-инструкции успешно созданы: {out_md}")
+            else:
+                raise RuntimeError("Ошибка в создании markdown-инструкции")
         else:
-            raise RuntimeError("Ошибка в создании markdown-инструкции")
-
+            raise RuntimeError("Ошибка в создании markdown-инструкции Match, Patch не созданы")
     except ValueError as e:
         logger.error(f"Ошибка в режиме генерации MD: {e}")
 

@@ -1,4 +1,4 @@
-from constants import SPECIAL_OPERATORS, OPEN_NESTING_MARKERS, CLOSE_NESTING_MARKERS, NESTING_MARKERS, DICTIONARY_NESTING_MARKERS, PASS_OPERATORS
+from constants import SPECIAL_OPERATORS, OPEN_NESTING_MARKERS, CLOSE_NESTING_MARKERS, NESTING_MARKERS, CLOSE_TO_OPEN_NESTING_MARKERS, PASS_OPERATORS
 from  Utilities import IsPassToN
 import copy
 import re
@@ -55,21 +55,37 @@ def CollectingResultsIndexInTokenList( IsInsertIndexDictionaryList, IsPassDictio
 
 @log_function(args=False, result=False)
 def ValidatePoint(IsPassDictionaryList, CandidateDictionaryList, TypeAction):
-    ValidPoints = []
-    for IsInsertIndexDictionary in CandidateDictionaryList:
-        CandidatePath = IsInsertIndexDictionary["IndexString"]
-        HasMatchingLeaf = any(pass_dict["IndexString"].startswith(CandidatePath) for pass_dict in IsPassDictionaryList)
-        if HasMatchingLeaf:
-            ValidPoints.append(IsInsertIndexDictionary)
+    try:
+        ValidPoints = []
+        for IsInsertIndexDictionary in CandidateDictionaryList:
+            CandidatePath = IsInsertIndexDictionary["IndexString"]
+            HasMatchingLeaf = any(pass_dict["IndexString"].startswith(CandidatePath) for pass_dict in IsPassDictionaryList)
+            if HasMatchingLeaf:
+                ValidPoints.append(IsInsertIndexDictionary)
 
-    if not ValidPoints:
-        raise ValueError(f"The {TypeAction} location was not found")
-    multipleAction = len(ValidPoints) > 1
-    if multipleAction:
-        raise ValueError(f"Pattern is not unique - multiple {TypeAction} regions found")
+        if not ValidPoints:
+            raise ValueError(f"The {TypeAction} location was not found")
+        ValidPoints = RemoveDuplicates(ValidPoints)
+        multipleAction = len(ValidPoints) > 1
+        if multipleAction:
+            raise ValueError(f"Pattern is not unique - multiple {TypeAction} regions found")
 
-    ValidPoint = ValidPoints[0]
-    return ValidPoint
+        ValidPoint = ValidPoints[0]
+        return ValidPoint
+    except ValueError as e:
+        logger.error(f"Pattern matching error: {e}")
+        return None
+
+
+def RemoveDuplicates(IsPassDictionaryList):
+    seen = set()
+    result = []
+    for d in IsPassDictionaryList:
+        key = (d.get('CodeNestingLevel'), d.get('CurrentSourceCodeTokenIndex'), d.get('CurrentSourceCodeTokenStringIndex'), d.get('InsertPosition'))
+        if key not in seen:
+            seen.add(key)
+            result.append(d)
+    return result
 
 @log_function(args=False, result=False)
 def FindAllSubstringEnds(string, SubString, SubStringIndex):
@@ -252,7 +268,7 @@ def IsPass(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionar
                                         SourceCodeNestingLevel = StartSourceCodeNestingLevel
                                         SourceCodeRelativeNestingLevel = copy.deepcopy(StartSourceCodeRelativeNestingLevel)
                                         CodeNestingLevel = StartCodeNestingLevel
-
+                            SourceCodeNestingLevel = StartSourceCodeNestingLevel
                             if BreakFlagCompression:
                                 break
         else:
@@ -450,7 +466,6 @@ def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
         CountInsert += SourceCodeTokenList[i].count(TokenInsertValue)
     CountInsert += SourceCodeTokenList[TokenInsertPosition][:TokenInsertStringIndex].count(TokenInsertValue)
     Result['Insert'] = [TokenInsertDirection, CountInsert + 1, TokenInsertValue, CodeNestingLevel]
-    print(Result)
     return Result
 
 
@@ -518,7 +533,7 @@ def CheckMatchNestingMarkerPairs(MatchTokenList):
             stack.append((IndexOnMatch, NestingMarker, i))
         elif NestingMarker in CLOSE_NESTING_MARKERS:
             for j in range(len(stack) - 1, -1, -1):
-                if stack[j][1] == DICTIONARY_NESTING_MARKERS[NestingMarker]:
+                if stack[j][1] == CLOSE_TO_OPEN_NESTING_MARKERS[NestingMarker]:
                     OpenNestingMarkerIndexOnMatch, _, _ = stack.pop(j)
                     IsNestingMarkerPairsDictionary[OpenNestingMarkerIndexOnMatch] = [True, IndexOnMatch]
                     IsNestingMarkerPairsDictionary[IndexOnMatch] = [True, OpenNestingMarkerIndexOnMatch]

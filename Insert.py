@@ -39,6 +39,11 @@ def Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False
         if InsertIndex == -1 or ReplaceIndex == -1:
             raise ValueError('The insertion and/or replacement position was not found')
 
+        while len(SourceContent) > ReplaceIndex + 1 and SourceContent[ReplaceIndex + 1].isspace():
+            ReplaceIndex += 1
+        while len(SourceContent) > InsertIndex + 1 and SourceContent[InsertIndex + 1].isspace():
+            InsertIndex += 1
+
         Patch = AddingTabs(Patch, CodeNestingLevel)
         if InsertPosition == 'Prev' and ReplacePosition == 'Next':
             ModifiedContent = SourceContent[:InsertIndex + len(InsertSearchString)] + Patch + SourceContent[ReplaceIndex:]
@@ -75,6 +80,10 @@ def Insert(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False)
                     break
         if CharPosition == -1:
             raise ValueError('Insertion position not found')
+
+        while len(SourceContent) > CharPosition + 1 and SourceContent[CharPosition + 1].isspace():
+            CharPosition += 1
+
         Patch = AddingTabs(Patch, CodeNestingLevel)
         ChangeEndIndex = 0
         if position == 'Next':

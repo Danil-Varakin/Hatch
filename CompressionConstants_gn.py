@@ -1,6 +1,6 @@
 FUNCTION_NODE_TYPES = ['function_declaration', 'function_definition', 'method_declaration', "call_expression", "preproc_function_def"]
 
-CONTROL_STRUCTURE_TYPES =  ['if_statement', 'while_statement', 'for_statement', 'switch_statement', 'else_statement', 'case_statement', 'do_statement', 'try_statement', 'elif_clause', 'else_clause', 'goto_statement',  'preproc_if', 'preproc_elif', 'preproc_else', 'preproc_ifdef', 'preproc_elifdef']
+CONTROL_STRUCTURE_TYPES =  ['if_statement', 'while_statement', 'for_statement', 'switch_statement', 'case_statement', 'else_statement', 'do_statement', 'try_statement', 'elif_clause', 'else_clause', 'goto_statement',  'preproc_if', 'preproc_elif', 'preproc_else', 'preproc_ifdef', 'preproc_elifdef']
 
 BRACKET_STRUCTURE_TYPES = ['enum_specifier', 'class_specifier', 'struct_specifier', 'union_specifier', 'try_statement', 'namespace_definition', 'attribute_declaration', 'compound_literal_expression', 'generic_expression', "seh_try_statement", "seh_except_clause", "seh_finally_clause"]
 
