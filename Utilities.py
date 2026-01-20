@@ -107,7 +107,7 @@ def DetectProgrammingLanguage(FileNameSourceCode):
 
 @log_function(args=False, result=False)
 def LoadLanguageModule(language: str):
-    ModuleName = f'CompressionConstants_{language}'
+    ModuleName = f'CompressionConstants.CompressionConstants_{language}'
     try:
         return importlib.import_module(ModuleName)
     except ModuleNotFoundError:
@@ -179,6 +179,7 @@ def AddingTabs(string, CodeNestingLevel):
         if string[len(string) - 1] == "\n":
             string = string + '\t' * CodeNestingLevel
     return string
+
 @log_function(args=False, result=False)
 def GetFileOldAndNewVersion(FilePath):
     try:
@@ -211,10 +212,27 @@ def GetFileOldAndNewVersion(FilePath):
         logger.critical(f"An unknown error: {str(e)}")
 
 @log_function(args=False, result=False)
-def FilteringListByOccurrence(FilterableList, FilterList):
-    FilteredList = [
-        (start, end) for start, end in FilterableList
-        if not any(FilterTupleStart <= start < FilterTupleEnd for FilterTupleStart, FilterTupleEnd in FilterList)]
-    return FilteredList
+def GetTokenIndexBeforePosition(NodeStart: int, tokens: list[str]) -> int:
+    pos = 0
+    TokenIndex = 0
+    while TokenIndex < len(tokens):
+        token = tokens[TokenIndex]
+        if pos + len(token) > NodeStart:
+            break
+        pos += len(token)
+        TokenIndex += 1
+    return TokenIndex
 
+@log_function(args=False, result=False)
+def TokenIndexToStringIndex(TargetTokenIndex, SourceCode, TokenList):
+    RepetitionCount = 1
+    for Token in TokenList[:TargetTokenIndex]:
+        if Token == TokenList[TargetTokenIndex]:
+            RepetitionCount += 1
+    pos = -1
+    for _ in range(RepetitionCount):
+        pos = SourceCode.find(TokenList[TargetTokenIndex], pos + 1)
+        if pos == -1:
+            return -1
 
+    return pos+1

@@ -27,7 +27,7 @@ def process_match_mode(match_path, in_path, out_path, patch_path=None, language 
                 match = CheckAndRunTokenize(match, language)
                 IsOnlyOneInsert = InsertOperatorStatus(match)
                 if IsOnlyOneInsert == 1:
-                    CompletionStatus = RunInsert(match, patch, SourceCode, out_path, out_path)
+                    CompletionStatus, _ = RunInsert(match, patch, SourceCode, out_path, out_path)
                 elif IsOnlyOneInsert == 2:
                     raise ValueError("There is more than one insert in match")
                 else:

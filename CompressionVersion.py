@@ -1,12 +1,15 @@
 import os
 import tempfile
-from ComprasionInput import handle_match_conflict
+from CompressionInput import HandleMatchConflict, AgreeEachMatchCommand
 from Insert import RunInsert
 from tree_sitter import Point
+
+from SearchCode import CheckMatchNestingMarkerPairs
 from TokenizeCode import CheckAndRunTokenize
 from Logging import setup_logger, log_function
 from tree_sitter_language_pack import get_parser
-from Utilities import ReadFile, LoadLanguageModule
+from Utilities import ReadFile, LoadLanguageModule, InsertOperatorStatus, GetTokenIndexBeforePosition, \
+    TokenIndexToStringIndex
 from typing import Any, Optional, Dict, Union
 from constants import OPEN_NESTING_MARKERS, OPEN_TO_CLOSE_NESTING_MARKERS, CLOSE_NESTING_MARKERS, CLOSE_TO_OPEN_NESTING_MARKERS
 from gitUtils import GetDiffOutput, ReadLastGitCommit
@@ -258,8 +261,10 @@ def IsIndependentNode(node: Any, language: str) -> Union[bool, int]:
         return 0
 
 @log_function(args=False, result=False)
-def FindNearestStructure(node: Any, NodeTypes: list[str], IsControlStructure: bool) -> Union[list[Dict[str, Any]], Dict]:
+def FindNearestStructure(node: Any, NodeTypes: list[str], IsControlStructure: bool, OldParentStructureList) -> Union[list[Dict[str, Any]], Dict]:
     try:
+        if OldParentStructureList is None:
+            OldParentStructureList = []
         NearestStructure = []
         CounterNesting = 0
         node = node.parent
@@ -270,7 +275,8 @@ def FindNearestStructure(node: Any, NodeTypes: list[str], IsControlStructure: bo
                 NearestStructure.append({"CounterNesting": CounterNesting, "NearestStructure": node})
                 if IsNotFirst or IsControlStructure:
                     break
-                IsNotFirst = True
+                if node.type not in OldParentStructureList:
+                    IsNotFirst = True
             node = node.parent
         return NearestStructure
     except Exception as e:
@@ -278,7 +284,7 @@ def FindNearestStructure(node: Any, NodeTypes: list[str], IsControlStructure: bo
         return {}
 
 @log_function(args=False, result=False)
-def FindParentConstructionALLType(NodesWithChange: Any, language: str) -> list[Any]:
+def FindParentConstructionALLType(NodesWithChange: Any, language: str, OldParentStructureList: Union[list[Any], None] = None) -> list[Any]:
     try:
         LanguageModule = LoadLanguageModule(language)
         ParentStructuresWithLevels = []
@@ -286,7 +292,7 @@ def FindParentConstructionALLType(NodesWithChange: Any, language: str) -> list[A
         for i, GroupStruct in enumerate([LanguageModule.FUNCTION_NODE_TYPES, LanguageModule.BRACKET_STRUCTURE_TYPES, LanguageModule.CONTROL_STRUCTURE_TYPES]):
             if i == 2:
                 IsControlStructure = True
-            NearestStructureDictionary = FindNearestStructure(NodesWithChange, GroupStruct, IsControlStructure)
+            NearestStructureDictionary = FindNearestStructure(NodesWithChange, GroupStruct, IsControlStructure, OldParentStructureList)
             for item in NearestStructureDictionary:
                 ParentStructuresWithLevels.append({"NestingLevel": item["CounterNesting"], "Structure": item["NearestStructure"]})
 
@@ -299,7 +305,76 @@ def FindParentConstructionALLType(NodesWithChange: Any, language: str) -> list[A
         return []
 
 @log_function(args=False, result=False)
-def AddInstruction(FilePath: str, MainBranch: str, language: str) ->tuple[list[str], list[str]]:
+def AddMatchParents(NodesWithChange: list[Any], ParentStructureForChangeNode: list[list[Any]], language: str) -> list[Any]:
+    try:
+        if not ParentStructureForChangeNode:
+            ParentStructureForChangeNode = [[] for _ in range(len(NodesWithChange))]
+        NewParentStructureForChangeNode = []
+        for ParentStructureList, NodeWithChange in zip(ParentStructureForChangeNode, NodesWithChange):
+            NewParentStructureList = FindParentConstructionALLType(NodeWithChange, language, ParentStructureList)
+            NewParentStructureForChangeNode.append(NewParentStructureList)
+        return NewParentStructureForChangeNode
+    except Exception as e:
+        logger.error(f"Logic error: {str(e)}")
+        return []
+
+@log_function(args=False, result=False)
+def AddMatchContext(FilePath: str, MainBranch: str, SourceCode: str, Match: list[str], Patch: list[str], NodesWithChange: list[Any], action: str, SiblingNodesDict: dict[str,Any], ParentStructureForChangeNode: list[list[Any]], NumberInsert: int, language: str):
+    try:
+        ParentStructureForChangeNode = AddMatchParents(NodesWithChange, ParentStructureForChangeNode, language)
+        Match[-1] = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action,language)
+        print("Добавление родительских конструкций:\n", Match[-1], "\n Patch: ", Patch[-1])
+        NewSourceCode, ErrorCode = UpdatingSourceCode(Patch[-1], Match[-1], SourceCode, language, NumberInsert)
+        if not NewSourceCode and ErrorCode != 3:
+            logger.info('The match did`t work correctly')
+            Match, Patch, NewSourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+        elif not NewSourceCode and ErrorCode == 3:
+            FirstNode = NodesWithChange[0]
+            FirstNodeParent = FirstNode.parent
+            while FirstNodeParent:
+                ParentNodeAlreadyExists = False
+                for ParentStructure in ParentStructureForChangeNode:
+                    if FirstNodeParent in ParentStructure:
+                        ParentNodeAlreadyExists = True
+                        break
+                if not ParentNodeAlreadyExists:
+                    break
+                FirstNodeParent = FirstNodeParent.parent
+            if FirstNodeParent:
+                NodeInsideFNP = GetNodesInsideTarget(NodesWithChange, FirstNodeParent)
+                ChangeNodePrevContext = GetChangeNodePrevContext(SourceCode, FirstNodeParent, NodeInsideFNP, language)
+                Match[-1] = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action, language, ChangeNodePrevContext)
+                print("Добавление контекста около вставки:\n", Match[-1], "\n Patch: ", Patch[-1])
+                SourceCode, ErrorCode = UpdatingSourceCode(Patch[-1],  Match[-1], SourceCode, language, NumberInsert)
+                if not SourceCode:
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+            else:
+                raise ValueError("Невозможно найти дополнительные родительские конструкции")
+
+        return Match, Patch, SourceCode, ErrorCode
+    except Exception as e:
+        logger.error(f"Logic error: {str(e)}")
+        return []
+
+@log_function(args=False, result=False)
+def GetChangeNodePrevContext(SourceCode, ParentNode, NodeInsideParentNode, language):
+    FirstNodeParentText = GetNodeText(ParentNode, SourceCode)
+    NodeStartInParentWithoutWhitespace, _ = GetNodePositionsInParentWithoutWhitespace(NodeInsideParentNode, ParentNode, SourceCode)
+    FirstNodeParentTokenList = CheckAndRunTokenize(FirstNodeParentText, language)
+    FirstNodeTokenIndex = GetTokenIndexBeforePosition(NodeStartInParentWithoutWhitespace, FirstNodeParentTokenList)
+    IsNestingMarkerPairsDictionary = CheckMatchNestingMarkerPairs(FirstNodeParentTokenList[:FirstNodeTokenIndex + 1])
+    NotPairedNestingMarkerIndex = -1
+    for Index, (IsMatched, PairIndex) in IsNestingMarkerPairsDictionary.items():
+        if not IsMatched and FirstNodeParentTokenList[Index] not in CLOSE_NESTING_MARKERS:
+            NotPairedNestingMarkerIndex = Index
+
+    CutIndex = TokenIndexToStringIndex(NotPairedNestingMarkerIndex, FirstNodeParentText,FirstNodeParentTokenList) if NotPairedNestingMarkerIndex > - 1 else 0
+    NodeStartInParent, NodeEndInParent = GetNodePositionsInParent(NodeInsideParentNode, ParentNode)
+    ChangeNodePrevContext = FirstNodeParentText[CutIndex:NodeStartInParent]
+    return ChangeNodePrevContext
+
+@log_function(args=False, result=False)
+def AddInstruction(FilePath: str, MainBranch: str, language: str, AgreeEachMatch: bool = False) ->tuple[list[str], list[str]]:
     try:
         Match = []
         Patch =[]
@@ -310,40 +385,50 @@ def AddInstruction(FilePath: str, MainBranch: str, language: str) ->tuple[list[s
             DiffOutput = GetDiffOutput(SourceCode, FilePath)
             ChangeLinesIndex = GetChangeIndexes(DiffOutput)
             Change = GetChange(ChangeLinesIndex, SourceCode, NewSourceCode)
+            if Change["type"] == "delete" and Change["deleted"] == "\n":
+                SourceCode = SourceCode[:Change["start"]] + SourceCode[Change["end"]:]
+                continue
+            elif  Change["type"] == "add" and Change["added"] == "\n":
+                SourceCode = SourceCode[:Change["end"]] + "\n" + SourceCode[Change["end"]:]
+                continue
             if not Change:
                 raise ValueError("Changes no found")
 
             tree = GetASTTree(SourceCode, language)
             StartPoint, EndPoint = GetChangeStartEndPoint(SourceCode, Change)
-            NodesWithChanges = SearchNodesWithChange(StartPoint, EndPoint, tree)
+            NodesWithChange = SearchNodesWithChange(StartPoint, EndPoint, tree)
 
-            UpdateChangeDict = UpdateChange(Change, NodesWithChanges, SourceCode, language)
+            UpdateChangeDict = UpdateChange(Change, NodesWithChange, SourceCode, language)
             Change = UpdateChangeDict["Change"]
             IsInsertInBegin = UpdateChangeDict["IsInsertInBegin"]
             action = Change['type']
 
             ParentStructureForChangeNode = []
-            for NodesWithChange in NodesWithChanges:
-                ParentStructure = FindParentConstructionALLType(NodesWithChange, language)
-                ParentStructureForChangeNode.append(ParentStructure)
+            ParentStructureForChangeNode = AddMatchParents(NodesWithChange, ParentStructureForChangeNode, language)
+            SiblingNodesDict = FindSiblingNodes(NodesWithChange, IsInsertInBegin, language)
 
-            SiblingNodesDict = FindSiblingNodes(NodesWithChanges, IsInsertInBegin, language)
-            match = GenerateMatch(NodesWithChanges, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action, language)
+            match = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action, language)
             if action == 'delete':
                 patch = ''
             else:
                 patch = Change["added"]
-            Patch.append(patch)
-            print(match, "\n Patch: ", patch)
-            if match in Match:
-                Match, Patch = handle_match_conflict(Match, Patch)
-
-            SourceCode = VerificationInstruction(patch, match, SourceCode, language, NumberInsert)
-
-            if not SourceCode:
-                raise ValueError('The match did`t work correctly')
-            NumberInsert += 1
             Match.append(match)
+            Patch.append(patch)
+            PrevSourceCode = SourceCode
+            if match in Match[:-1 ]:
+                Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+            else:
+                print(Match[-1], "\n Patch: ", Patch[-1])
+                SourceCode, ErrorCode = UpdatingSourceCode(patch, match, SourceCode, language, NumberInsert)
+                if not SourceCode and ErrorCode != 3:
+                    logger.info('The match did`t work correctly')
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath,MainBranch, language)
+                elif not SourceCode and ErrorCode == 3:
+                    Match, Patch, SourceCode, ErrorCode = AddMatchContext(FilePath, MainBranch, PrevSourceCode, Match, Patch, NodesWithChange, action, SiblingNodesDict, ParentStructureForChangeNode, NumberInsert, language)
+                NumberInsert += 1
+
+            if AgreeEachMatch and AgreeEachMatchCommand():
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
 
         return  Match, Patch
     except Exception as e:
@@ -351,8 +436,26 @@ def AddInstruction(FilePath: str, MainBranch: str, language: str) ->tuple[list[s
         return [], []
 
 @log_function(args=False, result=False)
-def VerificationInstruction(Patch: str, Match: str, SourceCode: str, Language: str, NumberInsert: int) -> str:
+def ResolvingConflictsWithVerification(Match: list[Any], Patch: list[Any], FilePath: str, MainBranch: str, language: str):
+    SourceCode = ReadLastGitCommit(FilePath, MainBranch)
+    ErrorCode = 0
+    while True:
+        NewSourceCode = SourceCode
+        NewMatch, NewPatch = HandleMatchConflict(Match, Patch)
+        NumberInsert = 0
+        for m, p in zip(NewMatch, NewPatch):
+            NewSourceCode, ErrorCode = UpdatingSourceCode(p, m, NewSourceCode, language, NumberInsert)
+            if not NewSourceCode and ErrorCode != 3:
+                logger.info("You fixed the match and patch incorrectly.")
+                break
+            NumberInsert += 1
+        break
+    return  NewMatch, NewPatch,  NewSourceCode, ErrorCode
+
+@log_function(args=False, result=False)
+def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, NumberInsert: int) -> tuple[str, int]:
     TempFilePath = None
+    ErrorCode = 0
     try:
         with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as temp_file:
             temp_file.write(SourceCode)
@@ -360,26 +463,35 @@ def VerificationInstruction(Patch: str, Match: str, SourceCode: str, Language: s
             TempFilePath = temp_file.name
             SourceCode = CheckAndRunTokenize(SourceCode, Language)
             Match = CheckAndRunTokenize(Match, Language)
-            CompletionStatus = RunInsert(Match, Patch, SourceCode, TempFilePath, TempFilePath)
-            if CompletionStatus == 1:
-                logger.info(f"Match № {NumberInsert} successfully inserted")
-                return ReadFile(TempFilePath)
+            IsOnlyOneInsert = InsertOperatorStatus(Match)
+            if IsOnlyOneInsert == 1:
+                CompletionStatus, ErrorCode = RunInsert(Match, Patch, SourceCode, TempFilePath, TempFilePath)
+                if CompletionStatus == 1:
+                    logger.info(f"Match № {NumberInsert} successfully inserted")
+                    return ReadFile(TempFilePath), ErrorCode
+                else:
+                    ErrorCode = 3
+                    raise ValueError(f"Match № {NumberInsert}  not created")
+            elif IsOnlyOneInsert == 2:
+                raise ValueError(f"В match № {NumberInsert} больше одной вставки")
             else:
-                raise ValueError(f"Match № {NumberInsert}  not created")
+                raise ValueError(f"В match № {NumberInsert} отсутствует место вставки")
     except ValueError as e:
         logger.error(f"Logic error: {str(e)}")
-        return ""
+        return "", ErrorCode
     except OSError as e:
         logger.error(f"Input/Output error: {str(e)}")
-        return ""
+        return "", ErrorCode
     finally:
         if TempFilePath:
             os.unlink(TempFilePath)
 
 @log_function(args=False, result=False)
-def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action, language) -> str:
+def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action, language, ChangeNodePrevContext = None) -> str:
     LanguageModule = LoadLanguageModule(language)
-    MatchList = CollectingMatchList(NodesWithChanges, NearestStructs, siblings, language)
+    if ChangeNodePrevContext:
+        siblings, NearestStructs = ClearMatchListConstruction(SourceCode, siblings, NearestStructs, ChangeNodePrevContext)
+    MatchList = CollectingMatchList(NodesWithChanges, NearestStructs, siblings,ChangeNodePrevContext, language)
 
     MatchString = "..."
     ISAction = True if action == "add" else False
@@ -416,6 +528,11 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             if NextNode and not NextType == "NodeWithChange" or not NextNode:
                 MatchString +=  "\n ... "
 
+        elif NodeType == 'ChangeNodePrevContext':
+            if not IsEllipsisTail and i > 0:
+                MatchString += " \n... "
+            MatchString += f"\n{node}"
+
         if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not ISAction:
             if not IsEllipsisTail and NodeType != "SiblingNode":
                 MatchString += f' ... >>> '
@@ -429,6 +546,39 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
     return MatchString
 
 @log_function(args=False, result=False)
+def ClearMatchListConstruction(SourceCode, siblings, NearestStructs, ChangeNodePrevContext:str):
+    NewSiblings = {}
+    PrevForFirst = siblings.get('PrevForFirst')
+    NextForLast = siblings.get('NextForLast')
+    if PrevForFirst and not IsSiblingInsideTheChangeNodePrevContext(PrevForFirst, SourceCode, ChangeNodePrevContext):
+        NewSiblings['PrevForFirst'] = PrevForFirst
+    else:
+        NewSiblings['PrevForFirst'] = None
+
+    if NextForLast and not IsSiblingInsideTheChangeNodePrevContext(NextForLast, SourceCode, ChangeNodePrevContext):
+        NewSiblings['NextForLast'] = NextForLast
+    else:
+        NewSiblings['NextForLast'] = None
+    NewNearestStructs = []
+    for ParentNodeList in NearestStructs:
+        NewParentNodeList = []
+        for ParentNode in ParentNodeList:
+            if not GetNodeText(ParentNode, SourceCode) in ChangeNodePrevContext:
+                NewParentNodeList.append(ParentNode)
+        NewNearestStructs.append(NewParentNodeList)
+
+    return NewSiblings, NewNearestStructs
+
+@log_function(args=False, result=False)
+def IsSiblingInsideTheChangeNodePrevContext(sibling, SourceCode, ChangeNodePrevContext:str):
+    SiblingText = GetNodeText(sibling, SourceCode)
+    if ChangeNodePrevContext.find(SiblingText) != -1:
+        return True
+    else:
+        return False
+
+
+@log_function(args=False, result=False)
 def BracketToNodeTypes(node: Any, typesSet: Dict[str, str]) -> Optional[str]:
     node_type = node.type
     for bracket, node_types in typesSet.items():
@@ -439,12 +589,16 @@ def BracketToNodeTypes(node: Any, typesSet: Dict[str, str]) -> Optional[str]:
 
 @log_function(args=False, result=False)
 def GetParentText (CurrentNode, MatchList, MatchListIndex, SourceCode, ParentBracketType):
-    node = MatchList[MatchListIndex + 1][0]
+    if MatchList[MatchListIndex + 1][1] == "ChangeNodePrevContext":
+        NodeText = MatchList[MatchListIndex + 1][0]
+    else:
+        node = MatchList[MatchListIndex + 1][0]
+        NodeText = GetNodeText(node, SourceCode)
     ParentText = f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}"
-    if GetNodeText(node, SourceCode) in ParentText:
+    if NodeText in ParentText:
         for bracket in OPEN_NESTING_MARKERS:
             ParentText = f"\n {GetNodeText(CurrentNode, SourceCode).split(bracket)[0].strip()}"
-            if GetNodeText(node, SourceCode) not in ParentText:
+            if NodeText not in ParentText:
                 ParentText +=  f" {bracket} ... "
                 return ParentText
     return f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}" + (f" {ParentBracketType} ... " if ParentBracketType else "")
@@ -459,6 +613,41 @@ def GetNodeText(node: Any, SourceCode: str) -> str:
         raise ValueError(f"Could`nt extract the node text at the positions {node.start_byte}:{node.end_byte}: {expt}")
 
 @log_function(args=False, result=False)
+def GetNodePositionsInParent(nodeList, ParentNode):
+    ParentStartByte = ParentNode.start_byte
+    NodeStartInParent = nodeList[0].start_byte - ParentStartByte
+    NodeEndInParent = nodeList[-1].end_byte - ParentStartByte
+    return NodeStartInParent, NodeEndInParent
+
+@log_function(args=False, result=False)
+def GetNodePositionsInParentWithoutWhitespace(nodeList, ParentNode, SourceCode):
+    NodeStartInParent, _ = GetNodePositionsInParent(nodeList, ParentNode)
+    ParentNodeText = GetNodeText(ParentNode, SourceCode)
+    NodeText = ""
+    for node in nodeList:
+        NodeText += GetNodeText(node, SourceCode)
+    WhitespaceCount = len(ParentNodeText[:NodeStartInParent]) -  len(''.join(ParentNodeText[:NodeStartInParent].split()))
+    NodeStartInParent = NodeStartInParent - WhitespaceCount
+    NodeEndInParent = NodeStartInParent + len(''.join(NodeText.split()))
+    return NodeStartInParent, NodeEndInParent
+
+def GetNodesInsideTarget(NodesList: list[Any], TargetNode: Any) -> list[Any]:
+    inside =[]
+    TargetStart = TargetNode.start_byte
+    TargetEnd = TargetNode.end_byte
+    for node in NodesList:
+        node_start = node.start_byte
+        node_end = node.end_byte
+
+        if TargetStart <= node_start and node_end <= TargetEnd:
+            inside.append(node)
+
+        elif node_start >= TargetEnd:
+            break
+
+    return inside
+
+@log_function(args=False, result=False)
 def IsNodeWholeConstruction(ParentNode: Any, ChildNode: Any, language: str) -> bool:
     LanguageModule = LoadLanguageModule(language)
     if ParentNode.type not in LanguageModule.DICTIONARY_SOLID_STRUCTURES:
@@ -466,7 +655,7 @@ def IsNodeWholeConstruction(ParentNode: Any, ChildNode: Any, language: str) -> b
     return ChildNode.type not in LanguageModule.DICTIONARY_SOLID_STRUCTURES[ParentNode.type]
 
 @log_function(args=False, result=False)
-def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[Any]], siblings: Dict[str, Optional[Any]], language: str) -> list[Any]:
+def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[Any]], siblings: Dict[str, Optional[Any]], ChangeNodePrevContext: str, language: str) -> list[Any]:
     try:
         NodePositions = {}
         BlockParent = []
@@ -487,15 +676,14 @@ def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[A
 
         SortedNodes = sorted([(node, NodeType) for node, (pos, NodeType) in NodePositions.items()], key=lambda x: NodePositions[x[0]][0])
 
-        FilteredNodes = []
-        FoundImportant = False
-        for node, NodeType in SortedNodes:
-            if NodeType in ('SiblingNode', 'NodeWithChange'):
-                FoundImportant = True
-            if NodeType != 'ParentNode' or not FoundImportant:
-                FilteredNodes.append((node, NodeType))
+        if ChangeNodePrevContext:
+            PrevContextEntry = (ChangeNodePrevContext, 'ChangeNodePrevContext')
+            for i, (_, node_type) in enumerate(SortedNodes):
+                if node_type == 'NodeWithChange':
+                    SortedNodes.insert(i, PrevContextEntry)
+                    break
+        return SortedNodes
 
-        return FilteredNodes
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
         return []

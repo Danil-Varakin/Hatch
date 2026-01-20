@@ -6,14 +6,14 @@ logger = setup_logger()
 
 @log_function(args=False, result=False)
 def RunInsert(Match, Patch, SourceCode, SourcePath, OutPath, returnChangeEndIndex=False):
-    SearchResult = SearchInsertIndexInSourceCode(Match, SourceCode)
+    SearchResult, ErrorCode = SearchInsertIndexInSourceCode(Match, SourceCode)
     if not SearchResult:
-        return 0
+        return 0, ErrorCode
     if "Replace" in SearchResult:
         CompletionStatus = Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex)
     else:
         CompletionStatus = Insert(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex)
-    return CompletionStatus
+    return CompletionStatus, ErrorCode
 
 @log_function(args=False, result=False)
 def Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False):

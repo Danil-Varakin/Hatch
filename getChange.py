@@ -72,14 +72,12 @@ def GetChangeIndexes(DiffOutput: str) -> list[tuple[Any]]:
                 continue
 
             if line.startswith("-"):
-                if line.strip() != '-':
-                    ChangeLinesIndex.append(({"OldLineIndex":OldLineNum, "NewLineIndex":NewLineNum},'del'))
-                    changesBlockStarted = True
+                ChangeLinesIndex.append(({"OldLineIndex":OldLineNum, "NewLineIndex":NewLineNum-1},'del'))
+                changesBlockStarted = True
                 OldLineNum += 1
             elif line.startswith("+"):
-                if line.strip() != '+':
-                    ChangeLinesIndex.append(({"OldLineIndex":OldLineNum, "NewLineIndex":NewLineNum},'add'))
-                    changesBlockStarted = True
+                ChangeLinesIndex.append(({"OldLineIndex":OldLineNum-1, "NewLineIndex":NewLineNum},'add'))
+                changesBlockStarted = True
                 NewLineNum += 1
             else:
                 if changesBlockStarted and ChangeLinesIndex:
@@ -90,7 +88,6 @@ def GetChangeIndexes(DiffOutput: str) -> list[tuple[Any]]:
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
         return ChangeLinesIndex
-
 @log_function(args=False, result=False)
 def GetChange(ChangeLinesIndex: list[tuple[Any]], OldCode: str, NewCode: str) -> dict[str,Any]:
     try:
@@ -99,7 +96,9 @@ def GetChange(ChangeLinesIndex: list[tuple[Any]], OldCode: str, NewCode: str) ->
             if ChangeType == 'del':
                 NewLineIndex = ChangeLineIndex["NewLineIndex"]
                 OldLineIndex = ChangeLineIndex["OldLineIndex"]
-                ChangeLine = OldCode.splitlines()[OldLineIndex]
+                ChangeLine = OldCode.splitlines(keepends=True)[OldLineIndex]
+                if not ChangeLine.isspace():
+                    ChangeLine = ChangeLine.replace('\n','')
                 IndexDict = FindStartEndPositionSubStringInStr(OldCode, ChangeLine, OldLineIndex)
                 Changes.append({ 'type': 'delete', 'start': IndexDict["StartIndex"], 'end': IndexDict["EndIndex"], 'added': '', 'deleted': ChangeLine, "NewLineIndex": NewLineIndex})
             else:
@@ -109,7 +108,7 @@ def GetChange(ChangeLinesIndex: list[tuple[Any]], OldCode: str, NewCode: str) ->
                     Changes.append({ 'type': 'add', 'start': Changes[-1]['start'], 'end': Changes[-1]['end'], 'added': ChangeLine, 'deleted': '', "NewLineIndex": NewLineIndex})
                 else:
                     OldLineIndex = ChangeLineIndex["OldLineIndex"]
-                    LineBeforeChangeIndexDict = FindInsertStartIndexInOldCode(OldCode, OldLineIndex - 1)
+                    LineBeforeChangeIndexDict = FindInsertStartIndexInOldCode(OldCode, OldLineIndex)
                     StartIndex = LineBeforeChangeIndexDict["LineBeforeChangeStartIndex"]
                     EndIndex = LineBeforeChangeIndexDict["LineBeforeChangeEndIndex"]
                     Changes.append({'type': 'add', 'start': StartIndex, 'end': EndIndex, 'added': ChangeLine,'deleted': '', "NewLineIndex": NewLineIndex})
@@ -149,25 +148,25 @@ def FindStartEndPositionSubStringInStr(CodeString: str, SubString: str, LineNumb
         if not SubString:
             raise ValueError("A substring cannot be empty")
 
-        CodeLines = CodeString.splitlines()
-        if LineNumber < 1 or LineNumber > len(CodeLines):
+        CodeLines = CodeString.splitlines(keepends=True)
+        if LineNumber < 0 or LineNumber > len(CodeLines):
             raise ValueError("The row number is out of the allowed range")
 
         StartIndex = 0
         for i in range(LineNumber):
-            StartIndex += len(CodeLines[i]) + 1
+            StartIndex += len(CodeLines[i])
         if len(CodeLines) - 1 == LineNumber:
             StartIndex -= 1
 
-        while CodeLines[LineNumber] == "":
+        while CodeLines[LineNumber] == "" and not SubString.isspace():
             LineNumber += 1
-        if CodeLines[LineNumber].find(SubString) != -1:
-            StartIndex += CodeLines[LineNumber].find(SubString)
+        StartStringIndex = CodeLines[LineNumber].find(SubString)
+        if StartStringIndex != -1:
+            StartIndex += StartStringIndex
             EndIndex = StartIndex + len(SubString)
             return {"StartIndex": StartIndex, "EndIndex": EndIndex}
         else:
             raise ValueError("The substring was not found in the string")
-
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
         return None

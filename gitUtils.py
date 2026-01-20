@@ -38,7 +38,7 @@ def ReadLastGitCommit(FilePath, MainBranch, splitLines=False):
             logger.error(f"Файл {FilePath} отсутствует в ветке {MainBranch}.")
         else:
             logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
-        return 0
+        return ''
 
 @log_function(args=False, result=False)
 def GetDiffOutput(FileLines, FilePath):
@@ -50,13 +50,13 @@ def GetDiffOutput(FileLines, FilePath):
         try:
             DiffOutput = subprocess.check_output([
                 "git", "diff",
-                "--no-color",  # без цветов
-                "--no-prefix",  # без a/ b/
-                "--no-index",  # сравнить файлы вне репозитория
-                "--no-ext-diff",  # без внешних diff программ
-                "--no-renames",  # без определения переименований (убрал пробел!)
-                "--ignore-all-space",  # игнорировать пробелы (достаточно одного флага)
-                "--diff-algorithm=histogram",  # алгоритм diff
+                "--no-color",
+                "--no-prefix",
+                "--no-index",
+                "--no-ext-diff",
+                "--no-renames",
+                "--ignore-all-space",
+                "--diff-algorithm=histogram",
                 OldFilePath,
                 GitPath
             ], text=True, encoding="utf-8")

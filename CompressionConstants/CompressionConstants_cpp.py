@@ -12,7 +12,7 @@ EXCLUDED_TYPES = {
 DICTIONARY_SOLID_STRUCTURES = {
     "function_definition": [
         "compound_statement", "type_specifier", "type_identifier", "identifier",
-        "statement", "expression", "primitive_type"
+        "statement", "expression", "primitive_type", 'function_declarator'
     ],
     "function_declaration": [
         "type_specifier", "function_declarator", "parameter_list", "identifier",

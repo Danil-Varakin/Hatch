@@ -8,6 +8,7 @@ logger = setup_logger()
 
 @log_function(args=False, result=False)
 def SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList):
+    ErrorCode = 0
     try:
         SourceCodeRelativeNestingLevel = {i: [0, False] for i in range(1, len(TokenInBetweenEllipsis(MatchTokenList)) + 1)}
         IsPassDictionaryList = [{"IndexString": "", "CurrentSourceCodeTokenIndex": 0, "SourceCodeNestingLevel": 0, "SourceCodeRelativeNestingLevel": SourceCodeRelativeNestingLevel,"CurrentSourceCodeTokenStringIndex": 0, 'StartSourceCodeTokenIndex': 0, 'StartSourceCodeTokenStringIndex': 0, "CodeNestingLevel": 0}]
@@ -24,17 +25,21 @@ def SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList):
             if MatchTokenList[MatchTokenIndex] == "<<<":
                 if IsInsertIndexDictionaryList:
                     IsReplaceIndexDictionaryList, IsPassDictionaryList, FlagFirstCircle, BracketIndexInSourceCodeList = IsInsert(MatchTokenList, MatchTokenIndex, SourceCodeTokenList, IsPassDictionaryList, FlagFirstCircle, NestingMap, BracketIndexInSourceCodeList)
-                else: raise ValueError("The insertion location was not found")
+                else:
+                    ErrorCode = 1
+                    raise ValueError("The insertion location was not found")
             if not IsPassDictionaryList:
+                ErrorCode = 2
                 raise ValueError(f"Part of the pattern was not found {MatchTokenIndex}")
         result = CollectingResultsIndexInTokenList(IsInsertIndexDictionaryList, IsPassDictionaryList, IsReplaceIndexDictionaryList)
         if result:
-            return result
+            return result, ErrorCode
         else:
+            ErrorCode = 3
             raise ValueError("Pattern is not unique")
     except ValueError as e:
         logger.error(f"Pattern matching error: {e}")
-        return  None
+        return  None, ErrorCode
 
 
 @log_function(args=False, result=False)
@@ -44,14 +49,20 @@ def CollectingResultsIndexInTokenList( IsInsertIndexDictionaryList, IsPassDictio
             raise ValueError("The insertion location was not found.")
         result = {}
         ValidInserts = ValidatePoint(IsPassDictionaryList, IsInsertIndexDictionaryList, "Insert")
-        result.update({"InsertSourceCodeTokenStringIndex": ValidInserts["CurrentSourceCodeTokenStringIndex"], "InsertSourceCodeTokenIndex": ValidInserts["CurrentSourceCodeTokenIndex"], "InsertPosition": ValidInserts["InsertPosition"], 'CodeNestingLevel': ValidInserts["CodeNestingLevel"]})
+        if ValidInserts:
+            result.update({"InsertSourceCodeTokenStringIndex": ValidInserts["CurrentSourceCodeTokenStringIndex"], "InsertSourceCodeTokenIndex": ValidInserts["CurrentSourceCodeTokenIndex"], "InsertPosition": ValidInserts["InsertPosition"], 'CodeNestingLevel': ValidInserts["CodeNestingLevel"]})
+        else:
+            raise ValueError("")
         if IsReplaceIndexDictionaryList:
             ValidReplaces = ValidatePoint(IsPassDictionaryList, IsReplaceIndexDictionaryList, "Replace")
-            result.update({"ReplaceSourceCodeTokenStringIndex": ValidReplaces["CurrentSourceCodeTokenStringIndex"], "ReplaceSourceCodeTokenIndex": ValidReplaces["CurrentSourceCodeTokenIndex"], "ReplacePosition": ValidReplaces["InsertPosition"]})
+            if ValidReplaces:
+                result.update({"ReplaceSourceCodeTokenStringIndex": ValidReplaces["CurrentSourceCodeTokenStringIndex"], "ReplaceSourceCodeTokenIndex": ValidReplaces["CurrentSourceCodeTokenIndex"], "ReplacePosition": ValidReplaces["InsertPosition"]})
+            else:
+                raise ValueError("")
         return result
     except ValueError as e:
-        logger.error(f"Pattern matching error: {e}")
-        return None
+        logger.error(f"{e}")
+        return 0
 
 @log_function(args=False, result=False)
 def ValidatePoint(IsPassDictionaryList, CandidateDictionaryList, TypeAction):
@@ -74,7 +85,7 @@ def ValidatePoint(IsPassDictionaryList, CandidateDictionaryList, TypeAction):
         return ValidPoint
     except ValueError as e:
         logger.error(f"Pattern matching error: {e}")
-        return None
+        return []
 
 
 def RemoveDuplicates(IsPassDictionaryList):
@@ -441,9 +452,9 @@ def FindIsInsertIndex(MatchTokenList, MatchTokenIndex, CurrentSourceCodeTokenStr
 
 @log_function(args=False, result=False)
 def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
-    InsertIndexInTokenDictionary = SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList)
+    InsertIndexInTokenDictionary, ErrorCode = SearchInsertIndexInTokenList(MatchTokenList, SourceCodeTokenList)
     if not InsertIndexInTokenDictionary:
-        return None
+        return None, ErrorCode
     Result = {}
     if "ReplaceSourceCodeTokenIndex" in InsertIndexInTokenDictionary:
         TokenReplaceDirection = InsertIndexInTokenDictionary["ReplacePosition"]
@@ -466,7 +477,7 @@ def SearchInsertIndexInSourceCode(MatchTokenList, SourceCodeTokenList):
         CountInsert += SourceCodeTokenList[i].count(TokenInsertValue)
     CountInsert += SourceCodeTokenList[TokenInsertPosition][:TokenInsertStringIndex].count(TokenInsertValue)
     Result['Insert'] = [TokenInsertDirection, CountInsert + 1, TokenInsertValue, CodeNestingLevel]
-    return Result
+    return Result, ErrorCode
 
 
 @log_function(args=False, result=False)
