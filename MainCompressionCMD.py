@@ -1,27 +1,26 @@
 import argparse
 import sys
 from Logging import setup_logger, log_function
-from CompressionVersion import  AddInstruction
+from CompressionVersion import  RunAddInstruction
 from CompressionInput  import CreateMarkdownInstructions
 from Utilities import DetectProgrammingLanguage
 from gitUtils import ReadLastGitCommit
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def ProcessGenerateMdMode(in_file, out_md, branch = None, language = None, agree_each_match = False):
+def ProcessGenerateMdMode(in_file, old_file_in, out_md, branch = None, language = None, agree_each_match = False):
     try:
         if not language:
             language = DetectProgrammingLanguage(in_file)
             logger.info(f"Автоопределён язык программирования: {language}")
+        if branch:
+            effective_branch = branch.strip() if branch and branch.strip() else "master"
+            logger.info(f"Сравнение с веткой: {effective_branch}")
+        else:
+            effective_branch = branch
 
-        effective_branch = branch.strip() if branch and branch.strip() else "master"
-        logger.info(f"Сравнение с веткой: {effective_branch}")
 
-        PreviousSource = ReadLastGitCommit(in_file, effective_branch)
-        if PreviousSource is None:
-            raise ValueError(f"Не удалось найти файл {in_file} в ветке '{effective_branch}'")
-
-        Match, Patch = AddInstruction( in_file, effective_branch, language, agree_each_match)
+        Match, Patch =  RunAddInstruction(in_file, language, AgreeEachMatch= agree_each_match, MainBranch= effective_branch, OldFilePath= old_file_in)
         if Match and Patch:
             success = CreateMarkdownInstructions(out_md, Match, Patch)
 
@@ -43,6 +42,8 @@ def main():
 
     parser.add_argument('--in', type=str, dest='in_file', required=True,
                         help='Путь к исходному файлу (например, src/main.cpp)')
+    parser.add_argument('--in_old', type=str, dest='old_in_file', required=True,
+                        help='Путь к исходному старой версии исходного файла (например, src/main.cpp)')
     parser.add_argument('--out', dest='out_file',type=str, required=True,
                         help='Путь к выходному .md файлу (например, changes.md)')
     parser.add_argument('--branch', type=str, default='master',
@@ -59,7 +60,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    ProcessGenerateMdMode( in_file=args.in_file, out_md=args.out_file, branch=args.branch, language=args.language, agree_each_match = args.agreement)
+    ProcessGenerateMdMode( in_file=args.in_file, old_file_in = args.old_in_file, out_md=args.out_file, branch=args.branch, language=args.language, agree_each_match = args.agreement)
 
 
 if __name__ == "__main__":

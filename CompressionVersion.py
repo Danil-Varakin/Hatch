@@ -319,7 +319,7 @@ def AddMatchParents(NodesWithChange: list[Any], ParentStructureForChangeNode: li
         return []
 
 @log_function(args=False, result=False)
-def AddMatchContext(FilePath: str, MainBranch: str, SourceCode: str, Match: list[str], Patch: list[str], NodesWithChange: list[Any], action: str, SiblingNodesDict: dict[str,Any], ParentStructureForChangeNode: list[list[Any]], NumberInsert: int, language: str):
+def AddMatchContext(OriginalSourceCode: str, SourceCode: str, Match: list[str], Patch: list[str], NodesWithChange: list[Any], action: str, SiblingNodesDict: dict[str,Any], ParentStructureForChangeNode: list[list[Any]], NumberInsert: int, language: str):
     try:
         ParentStructureForChangeNode = AddMatchParents(NodesWithChange, ParentStructureForChangeNode, language)
         Match[-1] = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action,language)
@@ -327,7 +327,7 @@ def AddMatchContext(FilePath: str, MainBranch: str, SourceCode: str, Match: list
         NewSourceCode, ErrorCode = UpdatingSourceCode(Patch[-1], Match[-1], SourceCode, language, NumberInsert)
         if not NewSourceCode and ErrorCode != 3:
             logger.info('The match did`t work correctly')
-            Match, Patch, NewSourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+            Match, Patch, NewSourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
         elif not NewSourceCode and ErrorCode == 3:
             FirstNode = NodesWithChange[0]
             FirstNodeParent = FirstNode.parent
@@ -347,7 +347,7 @@ def AddMatchContext(FilePath: str, MainBranch: str, SourceCode: str, Match: list
                 print("Добавление контекста около вставки:\n", Match[-1], "\n Patch: ", Patch[-1])
                 SourceCode, ErrorCode = UpdatingSourceCode(Patch[-1],  Match[-1], SourceCode, language, NumberInsert)
                 if not SourceCode:
-                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
             else:
                 raise ValueError("Невозможно найти дополнительные родительские конструкции")
 
@@ -374,14 +374,34 @@ def GetChangeNodePrevContext(SourceCode, ParentNode, NodeInsideParentNode, langu
     return ChangeNodePrevContext
 
 @log_function(args=False, result=False)
-def AddInstruction(FilePath: str, MainBranch: str, language: str, AgreeEachMatch: bool = False) ->tuple[list[str], list[str]]:
+def RunAddInstruction(NewFilePath: str, language: str, *, AgreeEachMatch: bool = False, MainBranch: str = None, OldFilePath: str = None) ->tuple[list[str], list[str]]:
     try:
+        SourceCode = ""
+        if MainBranch is not None and OldFilePath is not None:
+            raise ValueError("Нельзя передавать одновременно MainBranch и OldFilePath — выберите один из двух режимов работы")
+
+        elif MainBranch is None and OldFilePath is None:
+            raise ValueError("Необходимо указать либо MainBranch, либо OldFilePath")
+        elif MainBranch:
+            SourceCode = ReadLastGitCommit(NewFilePath, MainBranch)
+        elif OldFilePath:
+            SourceCode = ReadFile(OldFilePath)
+
+        NewSourceCode = ReadFile(NewFilePath)
+        Match, Patch = AddInstruction(NewFilePath, language, SourceCode, NewSourceCode, AgreeEachMatch)
+        return Match, Patch
+    except Exception as e:
+        logger.error(f"Logic error: {str(e)}")
+        return [], []
+
+@log_function(args=False, result=False)
+def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode: str, AgreeEachMatch: bool = False) ->tuple[list[str], list[str]]:
+    try:
+        OriginalSourceCode = SourceCode
         Match = []
         Patch =[]
         NumberInsert = 0
-        NewSourceCode = ReadFile(FilePath)
-        SourceCode = ReadLastGitCommit(FilePath, MainBranch)
-        while  CompareFilesFromPoint(SourceCode, ReadFile(FilePath)):
+        while  CompareFilesFromPoint(SourceCode, NewSourceCode):
             DiffOutput = GetDiffOutput(SourceCode, FilePath)
             ChangeLinesIndex = GetChangeIndexes(DiffOutput)
             Change = GetChange(ChangeLinesIndex, SourceCode, NewSourceCode)
@@ -416,19 +436,19 @@ def AddInstruction(FilePath: str, MainBranch: str, language: str, AgreeEachMatch
             Patch.append(patch)
             PrevSourceCode = SourceCode
             if match in Match[:-1 ]:
-                Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+                Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
             else:
                 print(Match[-1], "\n Patch: ", Patch[-1])
                 SourceCode, ErrorCode = UpdatingSourceCode(patch, match, SourceCode, language, NumberInsert)
                 if not SourceCode and ErrorCode != 3:
                     logger.info('The match did`t work correctly')
-                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath,MainBranch, language)
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
                 elif not SourceCode and ErrorCode == 3:
-                    Match, Patch, SourceCode, ErrorCode = AddMatchContext(FilePath, MainBranch, PrevSourceCode, Match, Patch, NodesWithChange, action, SiblingNodesDict, ParentStructureForChangeNode, NumberInsert, language)
+                    Match, Patch, SourceCode, ErrorCode = AddMatchContext(OriginalSourceCode, PrevSourceCode, Match, Patch, NodesWithChange, action, SiblingNodesDict, ParentStructureForChangeNode, NumberInsert, language)
                 NumberInsert += 1
 
             if AgreeEachMatch and AgreeEachMatchCommand():
-                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, FilePath, MainBranch, language)
+                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
 
         return  Match, Patch
     except Exception as e:
@@ -436,8 +456,7 @@ def AddInstruction(FilePath: str, MainBranch: str, language: str, AgreeEachMatch
         return [], []
 
 @log_function(args=False, result=False)
-def ResolvingConflictsWithVerification(Match: list[Any], Patch: list[Any], FilePath: str, MainBranch: str, language: str):
-    SourceCode = ReadLastGitCommit(FilePath, MainBranch)
+def ResolvingConflictsWithVerification(Match: list[Any], Patch: list[Any], SourceCode: str, language: str):
     ErrorCode = 0
     while True:
         NewSourceCode = SourceCode
@@ -470,7 +489,6 @@ def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, N
                     logger.info(f"Match № {NumberInsert} successfully inserted")
                     return ReadFile(TempFilePath), ErrorCode
                 else:
-                    ErrorCode = 3
                     raise ValueError(f"Match № {NumberInsert}  not created")
             elif IsOnlyOneInsert == 2:
                 raise ValueError(f"В match № {NumberInsert} больше одной вставки")
@@ -494,7 +512,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
     MatchList = CollectingMatchList(NodesWithChanges, NearestStructs, siblings,ChangeNodePrevContext, language)
 
     MatchString = "..."
-    ISAction = True if action == "add" else False
+    IsAddAction = True if action == "add" else False
 
     for i, (node, NodeType) in enumerate(MatchList):
         IsEllipsisTail =  MatchString[-3:len(MatchString)] == "..." or MatchString[-4:-1]  == "..."
@@ -514,7 +532,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             MatchString += f"\n {GetNodeText(node, SourceCode)} "
             IsNextExist = len(MatchList) > i + 1
             if IsNextExist and NextType in ["ParentNode", 'SiblingNode']  or not NextType:
-                if not ISAction:
+                if not IsAddAction:
                     MatchString += " <<< ... "
                 else:
                     MatchString += "\n >>> "
@@ -533,7 +551,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
                 MatchString += " \n... "
             MatchString += f"\n{node}"
 
-        if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not ISAction:
+        if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not IsAddAction:
             if not IsEllipsisTail and NodeType != "SiblingNode":
                 MatchString += f' ... >>> '
             else:
@@ -658,15 +676,18 @@ def IsNodeWholeConstruction(ParentNode: Any, ChildNode: Any, language: str) -> b
 def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[Any]], siblings: Dict[str, Optional[Any]], ChangeNodePrevContext: str, language: str) -> list[Any]:
     try:
         NodePositions = {}
-        BlockParent = []
+        BlockParents = []
         for i, node in enumerate(NodesWithChanges):
             NodePositions[node] = ((node.start_point[0], node.start_point[1]), 'NodeWithChange')
             if len(NearestStructs) >= i + 1:
                 for ParentNode in NearestStructs[i]:
                     if not IsNodeWholeConstruction(ParentNode, node, language):
-                        BlockParent.append(ParentNode)
-                    if ParentNode not in NodePositions and ParentNode not in BlockParent:
+                        BlockParents.append(ParentNode)
+                    if ParentNode not in NodePositions and ParentNode not in BlockParents:
                         NodePositions[ParentNode] = ((ParentNode.start_point[0], ParentNode.start_point[1]), 'ParentNode')
+        for BlockParent in BlockParents:
+            NodePositions.pop(BlockParent, None)
+
         PrevForFirst = siblings.get('PrevForFirst')
         NextForLast = siblings.get('NextForLast')
         if PrevForFirst:

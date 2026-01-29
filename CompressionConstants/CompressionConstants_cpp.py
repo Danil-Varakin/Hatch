@@ -239,7 +239,7 @@ BRACKET_TO_NODE_TYPES = {
         # Тело начинается после командного слова else
         'preproc_else'     # #else
     ],
-    'ifdef': [
+    'ifndef': [
         # Тело начинается после командного слова ifdef/elifdef
         'preproc_ifdef',   # #ifdef NAME
         'preproc_elifdef'  # #elifdef NAME

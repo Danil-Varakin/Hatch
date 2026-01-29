@@ -176,7 +176,6 @@ def setup_logger(LogDir: str = 'logs', console_level: int = logging.INFO, file_l
     ))
     AppLogger.addHandler(FileHandler)
 
-    AppLogger.info(f"start Logging → {LogFileName}")
     return AppLogger
 
 def log_function(func=None, *, args: bool = True, result: bool = True, no_truncate_args = ()):

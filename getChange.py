@@ -79,6 +79,9 @@ def GetChangeIndexes(DiffOutput: str) -> list[tuple[Any]]:
                 ChangeLinesIndex.append(({"OldLineIndex":OldLineNum-1, "NewLineIndex":NewLineNum},'add'))
                 changesBlockStarted = True
                 NewLineNum += 1
+            elif line.isspace() or line == "":
+                OldLineNum += 1
+                NewLineNum += 1
             else:
                 if changesBlockStarted and ChangeLinesIndex:
                     break

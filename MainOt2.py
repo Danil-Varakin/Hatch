@@ -1,11 +1,7 @@
-from CompressionVersion import  AddInstruction
+from CompressionVersion import   RunAddInstruction
 from CompressionInput  import CreateMarkdownInstructions
-from Utilities import  ReadFile
-from gitUtils import ReadLastGitCommit
-FilePath = r"test/PassedTests/unique16.cpp"
+FilePath = r"test/PassedTests/unique15.cpp"
 OutPath = "unique13res.md"
-SourceCode = ReadLastGitCommit(FilePath, "origin/development")
-print(repr(SourceCode[4043:4080]))
-S2 = ReadFile(FilePath)
-Match, Patch = AddInstruction( FilePath,"origin/development", "cpp")
+OldPath = r"test/PassedTests/unique14.cpp"
+Match, Patch =  RunAddInstruction(FilePath, "cpp", OldFilePath=OldPath)
 CreateMarkdownInstructions(OutPath, Match, Patch)
