@@ -349,7 +349,7 @@ def AddMatchContext(OriginalSourceCode: str, SourceCode: str, Match: list[str], 
                 if not SourceCode:
                     Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
             else:
-                raise ValueError("Невозможно найти дополнительные родительские конструкции")
+                raise ValueError("It is impossible to find additional parent constructs")
 
         return Match, Patch, SourceCode, ErrorCode
     except Exception as e:
@@ -378,10 +378,10 @@ def RunAddInstruction(NewFilePath: str, language: str, *, AgreeEachMatch: bool =
     try:
         SourceCode = ""
         if MainBranch is not None and OldFilePath is not None:
-            raise ValueError("Нельзя передавать одновременно MainBranch и OldFilePath — выберите один из двух режимов работы")
+            raise ValueError("You can't transmit both MainBranch and OldFilePath at the same time. Choose one of the two operating modes.")
 
         elif MainBranch is None and OldFilePath is None:
-            raise ValueError("Необходимо указать либо MainBranch, либо OldFilePath")
+            raise ValueError("You must specify either MainBranch or OldFilePath.")
         elif MainBranch:
             SourceCode = ReadLastGitCommit(NewFilePath, MainBranch)
         elif OldFilePath:
@@ -491,9 +491,9 @@ def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, N
                 else:
                     raise ValueError(f"Match № {NumberInsert}  not created")
             elif IsOnlyOneInsert == 2:
-                raise ValueError(f"В match № {NumberInsert} больше одной вставки")
+                raise ValueError(f"В match № {NumberInsert} more than one insert")
             else:
-                raise ValueError(f"В match № {NumberInsert} отсутствует место вставки")
+                raise ValueError(f"В match № {NumberInsert} missing insertion point")
     except ValueError as e:
         logger.error(f"Logic error: {str(e)}")
         return "", ErrorCode

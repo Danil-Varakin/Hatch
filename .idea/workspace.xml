@@ -5,31 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a4e4864a-9d13-423b-8f87-3d599fa6f103" name="Changes" comment="Переделана сборка git diff с учетом реального кода, добавлена сборка инструкций Match">
-      <change beforePath="$PROJECT_DIR$/ComprasionVersion.py" beforeDir="false" afterPath="$PROJECT_DIR$/ComprasionVersion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CompressionConstants_cpp.py" beforeDir="false" afterPath="$PROJECT_DIR$/CompressionConstants_cpp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Insert.py" beforeDir="false" afterPath="$PROJECT_DIR$/Insert.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainCMD2.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainCMD2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MainOt2.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainOt2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SearchCode.py" beforeDir="false" afterPath="$PROJECT_DIR$/SearchCode.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Utilities.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utilities.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique10.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique10.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique11.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique11.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique12.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique12.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique13.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique13.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique14.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique14.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique15.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique15.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique16.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique16.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique17.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique17.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique18.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique18.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique19.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique19.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique3.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique3.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique5.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique5.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique6.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique6.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique7.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique7.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique8.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique8.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/PassedTests/unique8.md" beforeDir="false" afterPath="$PROJECT_DIR$/test/PassedTests/unique8.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/pythonProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pythonProject.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CompressionVersion.py" beforeDir="false" afterPath="$PROJECT_DIR$/CompressionVersion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gitUtils.py" beforeDir="false" afterPath="$PROJECT_DIR$/gitUtils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,20 +47,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.ComprasionVersion.executor": "Debug",
-    "Python.MainOt.executor": "Debug",
-    "Python.MainOt2.executor": "Run",
-    "Python.SearchCode.executor": "Debug",
-    "Python.sbis_parser.executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "development",
-    "last_opened_file_path": "/Users/varakinde/PycharmProjects/Hatch",
-    "settings.editor.selected.configurable": "editor.preferences.tabs"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.ComprasionVersion.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.MainOt.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.MainOt2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.SearchCode.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.sbis_parser.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;development&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/varakinde/PycharmProjects/Hatch&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.tabs&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\droby\Hatch" />
@@ -100,6 +80,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MainOt.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -123,6 +104,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MainOt2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />

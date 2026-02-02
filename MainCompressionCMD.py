@@ -12,10 +12,10 @@ def ProcessGenerateMdMode(in_file, old_file_in, out_md, branch = None, language 
     try:
         if not language:
             language = DetectProgrammingLanguage(in_file)
-            logger.info(f"Автоопределён язык программирования: {language}")
+            logger.info(f"The programming language is automatically detected: {language}")
         if branch:
             effective_branch = branch.strip() if branch and branch.strip() else "master"
-            logger.info(f"Сравнение с веткой: {effective_branch}")
+            logger.info(f"Comparison with a branch: {effective_branch}")
         else:
             effective_branch = branch
 
@@ -25,38 +25,38 @@ def ProcessGenerateMdMode(in_file, old_file_in, out_md, branch = None, language 
             success = CreateMarkdownInstructions(out_md, Match, Patch)
 
             if success:
-                logger.info(f"Markdown-инструкции успешно созданы: {out_md}")
+                logger.info(f"Markdown-instructions have been successfully created: {out_md}")
             else:
-                raise RuntimeError("Ошибка в создании markdown-инструкции")
+                raise RuntimeError("Error in creating markdown instructions")
         else:
-            raise RuntimeError("Ошибка в создании markdown-инструкции Match, Patch не созданы")
+            raise RuntimeError("Error in creating markdown-Match, Patch instructions were not created")
     except ValueError as e:
-        logger.error(f"Ошибка в режиме генерации MD: {e}")
+        logger.error(f"Error in MD generation mode: {e}")
 
 @log_function(args=False, result=False)
 def main():
-    parser = argparse.ArgumentParser(description="Генерация Hatch-инструкций (.md) по изменениям в файле относительно Git-коммита. "
-                    "Сравнивает текущую версию файла с последним коммитом в указанной ветке "
-                    "и создаёт человекочитаемые декларативные инструкции для применения этих изменений."
+    parser = argparse.ArgumentParser(description="Generation of Hatch instructions (.md) for changes in a file relative to a Git commit. "
+"Compares the current version of the file with the last commit in the specified branch "
+"and creates human-readable declarative instructions for applying these changes."
     )
 
     parser.add_argument('--in', type=str, dest='in_file', required=True,
-                        help='Путь к исходному файлу (например, src/main.cpp)')
+                        help='The path to the source file (for example, src/main.cpp )')
     parser.add_argument('--in_old', type=str, dest='old_in_file', required=True,
-                        help='Путь к исходному старой версии исходного файла (например, src/main.cpp)')
+                        help='The path to the original old version of the source file (for example, src/main.cpp )')
     parser.add_argument('--out', dest='out_file',type=str, required=True,
-                        help='Путь к выходному .md файлу (например, changes.md)')
+                        help='The path to the output .md file (for example, changes.md )')
     parser.add_argument('--branch', type=str, default='master',
-                        help='Ветка Git для сравнения (по умолчанию: master)')
+                        help='Git branch for comparison (default: master)')
     parser.add_argument('--language', type=str, default=None,
-                        help='Язык программирования (например, cpp, python). Если не указан — определяется автоматически')
+                        help='Programming language (for example, cpp, python). If not specified, it is detected automatically.')
     parser.add_argument('-a', '--agreement', action='store_true',
-                        help='включить режим согласования каждого отдельного match')
+                        help='enable the matching mode for each individual match')
 
     args = parser.parse_args()
 
     if not args.in_file or not args.out_file:
-        logger.error("Ошибка: обязательные аргументы --in и --out")
+        logger.error("Error: required arguments --in and --out")
         parser.print_help()
         sys.exit(1)
 

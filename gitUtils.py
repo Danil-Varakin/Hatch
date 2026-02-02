@@ -38,7 +38,7 @@ def ReadLastGitCommit(FilePath, MainBranch, splitLines=False):
         if "exists on disk, but not in" in str(e):
             logger.error(f"Файл {FilePath} отсутствует в ветке {MainBranch}.")
         else:
-            logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
+            logger.error(f"Error when getting an old version of a file from a branch {MainBranch}: {str(e)}")
         return ''
 
 @log_function(args=False, result=False)
@@ -67,11 +67,11 @@ def GetDiffOutput(FileLines, FilePath):
             os.unlink(OldFilePath)
 
         if not DiffOutput:
-            raise ValueError(f"Нет различий в файле {FilePath} (или только пробелы)")
+            raise ValueError(f"There are no differences in the {FilePath} file (or only spaces)")
         return DiffOutput
 
     except Exception as e:
-        logger.error(f"Ошибка при сравнении файлов {FilePath}: {str(e)}")
+        logger.error(f"Error when comparing files {FilePath}: {str(e)}")
         return 0
 
 @log_function(args=False, result=False)
@@ -124,5 +124,5 @@ def FilterDiffOutput(DiffOutput):
             current_pos = end + 1
         return "\n".join(result) if ISHaveChange else 0
     except Exception as e:
-        logger.error(f"Ошибка при фильтрации diff: {str(e)}")
+        logger.error(f"Filtering error diff: {str(e)}")
         return 0
