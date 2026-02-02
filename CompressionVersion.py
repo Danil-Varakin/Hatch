@@ -323,7 +323,7 @@ def AddMatchContext(OriginalSourceCode: str, SourceCode: str, Match: list[str], 
     try:
         ParentStructureForChangeNode = AddMatchParents(NodesWithChange, ParentStructureForChangeNode, language)
         Match[-1] = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action,language)
-        print("Добавление родительских конструкций:\n", Match[-1], "\n Patch: ", Patch[-1])
+        print("Adding parent constructs:\n", Match[-1], "\n Patch: ", Patch[-1])
         NewSourceCode, ErrorCode = UpdatingSourceCode(Patch[-1], Match[-1], SourceCode, language, NumberInsert)
         if not NewSourceCode and ErrorCode != 3:
             logger.info('The match did`t work correctly')
@@ -344,7 +344,7 @@ def AddMatchContext(OriginalSourceCode: str, SourceCode: str, Match: list[str], 
                 NodeInsideFNP = GetNodesInsideTarget(NodesWithChange, FirstNodeParent)
                 ChangeNodePrevContext = GetChangeNodePrevContext(SourceCode, FirstNodeParent, NodeInsideFNP, language)
                 Match[-1] = GenerateMatch(NodesWithChange, SiblingNodesDict, ParentStructureForChangeNode, SourceCode, action, language, ChangeNodePrevContext)
-                print("Добавление контекста около вставки:\n", Match[-1], "\n Patch: ", Patch[-1])
+                print("Adding context around the insertion:\n", Match[-1], "\n Patch: ", Patch[-1])
                 SourceCode, ErrorCode = UpdatingSourceCode(Patch[-1],  Match[-1], SourceCode, language, NumberInsert)
                 if not SourceCode:
                     Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)

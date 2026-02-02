@@ -3,7 +3,6 @@ import re
 import tempfile
 import subprocess
 from Logging import setup_logger, log_function
-from Utilities import ReadFile
 
 logger = setup_logger()
 
@@ -36,7 +35,7 @@ def ReadLastGitCommit(FilePath, MainBranch, splitLines=False):
             return Content
     except subprocess.CalledProcessError as e:
         if "exists on disk, but not in" in str(e):
-            logger.error(f"Файл {FilePath} отсутствует в ветке {MainBranch}.")
+            logger.error(f"File {FilePath} is missing in branch {MainBranch}.")
         else:
             logger.error(f"Error when getting an old version of a file from a branch {MainBranch}: {str(e)}")
         return ''

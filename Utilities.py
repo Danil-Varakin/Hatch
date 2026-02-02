@@ -46,9 +46,9 @@ def WriteResultToMarkdown(output_file, match_result, change_dict):
             f.write('```\n')
             f.write(f"\n{change_dict['added']}\n")
             f.write('```\n')
-        logger.info(f"Результат успешно записан в {output_file}")
+        logger.info(f"Result successfully written to {output_file}")
     except Exception as e:
-        logger.error(f"Ошибка при записи в Markdown файл: {str(e)}")
+        logger.error(f"Error writing to Markdown file: {str(e)}")
         raise
 
 @log_function(args=False, result=False)
@@ -76,10 +76,10 @@ def ReadFileContents(PathFile, MainBranch):
         return {"NewLines": NewLines, "OldLines": OldLines}
     except subprocess.CalledProcessError as e:
         if "exists on disk, but not in" in str(e):
-            logger.warning(f"Файл {PathFile} отсутствует в ветке {MainBranch}. Считаем старую версию пустой.")
+            logger.warning(f"File {PathFile} is missing in branch {MainBranch}. Treating the old version as empty.")
             return {"NewLines": ReadLine(PathFile), "OldLines": []}
         else:
-            logger.error(f"Ошибка при получении старой версии файла из ветки {MainBranch}: {str(e)}")
+            logger.error(f"Error retrieving the old version of the file from the branch {MainBranch}: {str(e)}")
             raise
 
 @log_function(args=False, result=False)

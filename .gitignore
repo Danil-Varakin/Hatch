@@ -24,3 +24,6 @@ logs/
 *.tmp
 result*.cpp
 unique*res.md
+
+# Tests / тестовые данные
+test/
