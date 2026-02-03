@@ -103,7 +103,7 @@ def GetChange(ChangeLinesIndex: list[tuple[Any]], OldCode: str, NewCode: str) ->
                 if not ChangeLine.isspace():
                     ChangeLine = ChangeLine.replace('\n','')
 
-                if ChangeLine.isspace() or ChangeLine.strip() == "" and ChangeType == 'del':
+                if (ChangeLine.isspace() or ChangeLine.strip() == "") and ChangeType == 'del' and len(ChangeLinesIndex) > 1:
                     continue
 
                 IndexDict = FindStartEndPositionSubStringInStr(OldCode, ChangeLine, OldLineIndex)
