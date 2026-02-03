@@ -1,9 +1,9 @@
-### match:
+### match
 ```
 ...
 VerifiedContents::CreateFromFile(...) {
  ...
-  >>>
+ >>>
  return nullptr;
  ...
 }

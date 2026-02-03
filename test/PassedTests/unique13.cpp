@@ -42,7 +42,7 @@ using RequestExpectationsCallback =
 
 namespace {
 
-constexpr char kEmbeddedTestServerDirectory[] = "brave-search";
+
 constexpr char kAllowedDomain[] = "search.brave.com";
 constexpr char kAllowedDomainDev[] = "search.brave.software";
 constexpr char kNotAllowedDomain[] = "brave.com";
@@ -220,7 +220,7 @@ class BraveSearchTestEnabled : public BraveSearchTest {
   BraveSearchTestEnabled() {
     feature_list_.InitAndEnableFeatureWithParameters(
         brave_search::features::kBraveSearchDefaultAPIFeature,
-        {{brave_search::features::kBraveSearchDefaultAPIDailyLimitName, "3"},
+        {{brave_search::features::kBraveSearchDefaultAPIDailyLimitName2, "3"},
          {brave_search::features::kBraveSearchDefaultAPITotalLimitName, "10"}});
   }
 };
@@ -246,7 +246,7 @@ IN_PROC_BROWSER_TEST_F(BraveSearchTest, CheckForAFunctionDev) {
 
   auto result_first =
       EvalJs(contents, GetChromeFetchBackupResultsAvailScript());
-  EXPECT_EQ(base::Value(true), result_first.value);
+  EXPECT_EQ(base::Value(false), result_first.value);
 }
 
 IN_PROC_BROWSER_TEST_F(BraveSearchTest, CheckForAnUndefinedFunction) {
@@ -274,20 +274,20 @@ IN_PROC_BROWSER_TEST_F(BraveSearchTestEnabled,
   // See SearchEngineTabHelper::GenerateKeywordFromNavigationEntry.
   GURL url = https_server()->GetURL(kAllowedDomain, "/");
   search_test_utils::WaitForTemplateURLServiceToLoad(
-      TemplateURLServiceFactory::GetForProfile(browser()->profile()));
+      TemplateURLServiceFactory::GetForProfile(browser()->profile2()));
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
   content::WebContents* contents =
       browser()->tab_strip_model()->GetActiveWebContents();
   WaitForLoadStop(contents);
   EXPECT_EQ(url, contents->GetURL());
-  EXPECT_EQ(true, content::EvalJs(contents, kScriptDefaultAPIExists));
+  EXPECT_EQ(false, content::EvalJs(contents, kScriptDefaultAPIExists));
   EXPECT_EQ(true, content::EvalJs(contents, kScriptDefaultAPIGetValue));
 }
 
 IN_PROC_BROWSER_TEST_F(BraveSearchTestEnabled, DefaultAPIHiddenUnknownHost) {
   // Opensearch providers are only allowed in the root of a site,
   // See SearchEngineTabHelper::GenerateKeywordFromNavigationEntry.
-  GURL url = https_server()->GetURL(kNotAllowedDomain, "/");
+  GURL url = https_server()->GetURL(kNotAllowedDomain, "//");
   search_test_utils::WaitForTemplateURLServiceToLoad(
       TemplateURLServiceFactory::GetForProfile(browser()->profile()));
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));

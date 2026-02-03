@@ -5,8 +5,8 @@ from TokenizeCode import CheckAndRunTokenize
 from Insert import RunInsert
 from Logging import setup_logger, log_function
 
-logger = setup_logger(log_file='my_app.log')
-@log_function
+logger = setup_logger()
+@log_function(args=False, result=False)
 def process_match_mode(match_path, in_path, out_path, patch_path=None, language = None):
     try:
         if language:
@@ -27,7 +27,7 @@ def process_match_mode(match_path, in_path, out_path, patch_path=None, language 
                 match = CheckAndRunTokenize(match, language)
                 IsOnlyOneInsert = InsertOperatorStatus(match)
                 if IsOnlyOneInsert == 1:
-                    CompletionStatus = RunInsert(match, patch, SourceCode, out_path, out_path)
+                    CompletionStatus, _ = RunInsert(match, patch, SourceCode, out_path, out_path)
                 elif IsOnlyOneInsert == 2:
                     raise ValueError("There is more than one insert in match")
                 else:
@@ -45,7 +45,7 @@ def process_match_mode(match_path, in_path, out_path, patch_path=None, language 
     except Exception as e:
         logger.critical(f"Error in Match mode: {e}")
 
-@log_function
+@log_function(args=False, result=False)
 def main():
     parser = argparse.ArgumentParser(description="Hatch is designed to simplify the process of applying Git patches. Traditional patches are complex to analyze and apply, especially in large projects. The Hatch logical language allows changes to be described declaratively, improving readability and automating the process.Hatch is designed to simplify the process of applying Git patches. Traditional patches are complex to analyze and apply, especially in large projects. The Hatch logical language allows changes to be described declaratively, improving readability and automating the process.")
 

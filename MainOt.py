@@ -1,11 +1,10 @@
-
 from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength, WriteFile, InsertOperatorStatus
 from TokenizeCode import CheckAndRunTokenize
-from SearchCode import MatchNestingLevelInsertALL, SearchInsertIndexInSourceCode, SearchInsertIndexInTokenList, TokensInNestingMarkersAll, DictToTuples
+from SearchCode import MatchNestingLevelInsertALL, SearchInsertIndexInSourceCode, TokensInNestingMarkersAll
 from Insert import RunInsert
 
-SourcePath = "test/PassedTests/unique20.gn"
-MatchPath = "test/PassedTests/unique20.md"
+SourcePath = "test/PassedTests/unique15.cpp"
+MatchPath = "test/PassedTests/unique15.md"
 ResultPath = 'result1.cpp'
 Language = DetectProgrammingLanguage(SourcePath)
 Matches = ReceivingMatchOrPatchOrSourceCodeFromList(MatchPath, "Match")
@@ -21,9 +20,7 @@ if ComparingListsLength(Matches, Patches):
         if IsOnlyOneInsert == 1:
             FFFF = MatchNestingLevelInsertALL(Match)
             sss = TokensInNestingMarkersAll(Match)
-            print(f" Match: {Match}")
-            print(f"Source code TokenList: {SourceCode}")
-            SearchDictionary = SearchInsertIndexInSourceCode(Match, SourceCode)
+            SearchDictionary, _ = SearchInsertIndexInSourceCode(Match, SourceCode)
             print(f"Insert index in sourcecode TokenList: {SearchDictionary}")
             RunInsert(Match, Patch, SourceCode, ResultPath, ResultPath)
         elif IsOnlyOneInsert == 2:

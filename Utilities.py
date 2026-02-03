@@ -1,22 +1,23 @@
 import os
 import re
+import importlib
+import subprocess
 from typing import Literal
 from constants import EXTENSIONS_FILE
-import subprocess
 from Logging import setup_logger, log_function
 
-logger = setup_logger(log_file='my_app.log')
+logger = setup_logger()
 
-@log_function
-def ReadFile(FilePath):
+@log_function(args=False, result=False)
+def ReadFile(FilePath, encoding='utf-8'):
     try:
-        with open(FilePath, 'r', encoding='utf-8') as file:
+        with open(FilePath, 'r', encoding = encoding) as file:
             return file.read()
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
 
-@log_function
+@log_function(args=False, result=False)
 def ReadLine(FilePath):
     try:
         with open(FilePath, 'r', encoding='utf-8') as file:
@@ -24,7 +25,7 @@ def ReadLine(FilePath):
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
-@log_function
+@log_function(args=False, result=False)
 def WriteFile(FilePath, Result):
     try:
         with open(FilePath, 'w', encoding='utf-8') as file:
@@ -32,10 +33,28 @@ def WriteFile(FilePath, Result):
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
-@log_function
+@log_function(args=False, result=False)
+def WriteResultToMarkdown(output_file, match_result, change_dict):
+
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write('### match\n')
+            f.write('```\n')
+            f.write(f'{match_result}\n')
+            f.write('```\n')
+            f.write('### patch\n')
+            f.write('```\n')
+            f.write(f"\n{change_dict['added']}\n")
+            f.write('```\n')
+        logger.info(f"Result successfully written to {output_file}")
+    except Exception as e:
+        logger.error(f"Error writing to Markdown file: {str(e)}")
+        raise
+
+@log_function(args=False, result=False)
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
-        matches = re.findall(r'### match:\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
+        matches = re.findall(r'### match\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
         if matches:
             return [match.strip() for match in matches]
         else:
@@ -44,10 +63,29 @@ def MatchLoadFromString(StringOfMarkdownContent):
         logger.error(f"Logic error: {e}")
         return []
 
-@log_function
+@log_function(args=False, result=False)
+def ReadFileContents(PathFile, MainBranch):
+    try:
+        NewLines = ReadLine(PathFile)
+        RepositoryPath = os.path.relpath(PathFile, start=os.getcwd()).replace(os.sep, "/")
+        OldContent = subprocess.check_output(
+            ["git", "show", f"{MainBranch}:{RepositoryPath}"],
+            text=True,
+            encoding="utf-8")
+        OldLines = OldContent.splitlines(keepends=True)
+        return {"NewLines": NewLines, "OldLines": OldLines}
+    except subprocess.CalledProcessError as e:
+        if "exists on disk, but not in" in str(e):
+            logger.warning(f"File {PathFile} is missing in branch {MainBranch}. Treating the old version as empty.")
+            return {"NewLines": ReadLine(PathFile), "OldLines": []}
+        else:
+            logger.error(f"Error retrieving the old version of the file from the branch {MainBranch}: {str(e)}")
+            raise
+
+@log_function(args=False, result=False)
 def PatchLoadFromString(StringOfMarkdownContent):
     try:
-        patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.DOTALL)
+        patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
         if patches:
             return [patch[1:-1] if patch.startswith('\n') and patch.endswith('\n') else patch.strip() for patch in patches]
         else:
@@ -56,7 +94,7 @@ def PatchLoadFromString(StringOfMarkdownContent):
         logger.error(f"Logic error: {e}")
         return []
 
-@log_function
+@log_function(args=False, result=False)
 def DetectProgrammingLanguage(FileNameSourceCode):
     try:
         ext = os.path.splitext(FileNameSourceCode)[1].lower()
@@ -67,7 +105,17 @@ def DetectProgrammingLanguage(FileNameSourceCode):
     except ValueError as e:
         logger.error(f"Logic error: {e}")
 
-@log_function
+@log_function(args=False, result=False)
+def LoadLanguageModule(language: str):
+    ModuleName = f'CompressionConstants.CompressionConstants_{language}'
+    try:
+        return importlib.import_module(ModuleName)
+    except ModuleNotFoundError:
+        raise ValueError(f'The module for the {language} language was not found. Check the {ModuleName}.py file')
+    except Exception as e:
+        raise RuntimeError(f'Error loading the module for {language}: {e}')
+
+@log_function(args=False, result=False)
 def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Match', 'Patch', 'SourceCode']):
     if TypeContent == 'Match':
         return MatchLoadFromString(ReadFile(FilePath))
@@ -76,7 +124,7 @@ def ReceivingMatchOrPatchOrSourceCodeFromList(FilePath, TypeContent: Literal['Ma
     else:
         return ReadFile(FilePath)
 
-@log_function
+@log_function(args=False, result=False)
 def ComparingListsLength(matches, patches):
     try:
         if len(matches) != len(patches):
@@ -86,7 +134,7 @@ def ComparingListsLength(matches, patches):
         logger.error(f"Logic error: {e}")
         return False
 
-@log_function
+@log_function(args=False, result=False)
 def FindNthNOperators(string, StartIndex):
     result = ""
     if StartIndex >= len(string):
@@ -102,11 +150,11 @@ def FindNthNOperators(string, StartIndex):
             result = string[StartIndex: EndIndex + 2]
     return result
 
-@log_function
+@log_function(args=False, result=False)
 def IsPassToN(Token):
     return re.fullmatch(r'\^[1-9]\d*\.\.', Token)
 
-@log_function
+@log_function(args=False, result=False)
 def InsertOperatorStatus(MatchTokenList):
     matches = [MatchToken for MatchToken in MatchTokenList if ">>>" in MatchToken]
     if matches:
@@ -131,7 +179,8 @@ def AddingTabs(string, CodeNestingLevel):
         if string[len(string) - 1] == "\n":
             string = string + '\t' * CodeNestingLevel
     return string
-@log_function
+
+@log_function(args=False, result=False)
 def GetFileOldAndNewVersion(FilePath):
     try:
         OldVersionResult = subprocess.run(
@@ -162,11 +211,28 @@ def GetFileOldAndNewVersion(FilePath):
     except Exception as e:
         logger.critical(f"An unknown error: {str(e)}")
 
-@log_function
-def FilteringListByOccurrence(FilterableList, FilterList):
-    FilteredList = [
-        (start, end) for start, end in FilterableList
-        if not any(FilterTupleStart <= start < FilterTupleEnd for FilterTupleStart, FilterTupleEnd in FilterList)]
-    return FilteredList
+@log_function(args=False, result=False)
+def GetTokenIndexBeforePosition(NodeStart: int, tokens: list[str]) -> int:
+    pos = 0
+    TokenIndex = 0
+    while TokenIndex < len(tokens):
+        token = tokens[TokenIndex]
+        if pos + len(token) > NodeStart:
+            break
+        pos += len(token)
+        TokenIndex += 1
+    return TokenIndex
 
+@log_function(args=False, result=False)
+def TokenIndexToStringIndex(TargetTokenIndex, SourceCode, TokenList):
+    RepetitionCount = 1
+    for Token in TokenList[:TargetTokenIndex]:
+        if Token == TokenList[TargetTokenIndex]:
+            RepetitionCount += 1
+    pos = -1
+    for _ in range(RepetitionCount):
+        pos = SourceCode.find(TokenList[TargetTokenIndex], pos + 1)
+        if pos == -1:
+            return -1
 
+    return pos+1
