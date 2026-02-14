@@ -77,7 +77,7 @@ def GetChangeStartEndPoint(CodeAnalyze: str, change: Dict[str, Any]) -> Any:
     StartLine = len(LinesStartList) - 1
     StartCol = len(LinesStartList[-1]) - 1 if LinesStartList else 0
 
-    while ChangeEnd >= ChangeStart and CodeAnalyze[ChangeEnd].isspace():
+    while ChangeEnd >= ChangeStart and len(CodeAnalyze) > ChangeEnd and CodeAnalyze[ChangeEnd].isspace():
         ChangeEnd -= 1
     PrefixEnd = CodeAnalyze[:ChangeEnd + 1]
     LinesEnd = PrefixEnd.splitlines(keepends=True)

@@ -1,0 +1,114 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hatch-smart-patches"
+version = "1.0.0"
+description = "Smart Patches Project: Hatch - A tool for applying Git patches using logical language"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Danil Varakin", email = "zxcasdzxcasd670@gmail.com"},
+    {name = "Kirillkadr"}
+]
+keywords = ["git", "patch", "code", "diff", "smart-patches"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# Основные зависимости проекта
+dependencies = [
+    "termcolor>=2.0.0",                    # Цветной вывод в консоль
+    "tree-sitter>=0.20.0",                 # Парсер для анализа кода
+    "tree-sitter-language-pack>=0.1.0",   # Языковые пакеты для tree-sitter
+]
+
+# Опциональные зависимости для разработки и тестирования
+[project.optional-dependencies]
+# Полный набор для разработки
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=22.0",
+    "flake8>=5.0",
+    "mypy>=1.0",
+    "isort>=5.0",
+    "ruff>=0.1.0",
+]
+
+# Только тестирование
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10.0",
+]
+
+# Дополнительные языковые пакеты tree-sitter (если нужны конкретные языки)
+languages = [
+    "tree-sitter-python>=0.20.0",
+    "tree-sitter-cpp>=0.20.0",
+    "tree-sitter-c>=0.20.0",
+    "tree-sitter-javascript>=0.20.0",
+]
+
+# Все зависимости вместе
+all = [
+    "hatch-smart-patches[dev,test,languages]",
+]
+
+[project.urls]
+Homepage = "https://github.com/Danil-Varakin/Hatch"
+Repository = "https://github.com/Danil-Varakin/Hatch"
+Issues = "https://github.com/Danil-Varakin/Hatch/issues"
+
+[project.scripts]
+hatch-patch = "Hatch:main"
+
+[tool.setuptools]
+py-modules = [
+    "CompressionInput",
+    "CompressionVersion",
+    "Insert",
+    "Logging",
+    "MainCMD",
+    "MainCompressionCMD",
+    "MainOt",
+    "MainOt2",
+    "MainTest",
+    "SearchCode",
+    "TokenizeCode",
+    "Utilities",
+    "constants",
+    "getChange",
+    "gitUtils",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["CompressionConstants*"]
+exclude = ["test*", "venv*", ".git*", "logs*", "*.egg-info"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
