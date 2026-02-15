@@ -77,7 +77,7 @@ def GetChangeStartEndPoint(CodeAnalyze: str, change: Dict[str, Any]) -> Any:
     StartLine = len(LinesStartList) - 1
     StartCol = len(LinesStartList[-1]) - 1 if LinesStartList else 0
 
-    while ChangeEnd >= ChangeStart and len(CodeAnalyze) > ChangeEnd and CodeAnalyze[ChangeEnd].isspace():
+    while len(CodeAnalyze) > ChangeEnd >= ChangeStart and CodeAnalyze[ChangeEnd].isspace():
         ChangeEnd -= 1
     PrefixEnd = CodeAnalyze[:ChangeEnd + 1]
     LinesEnd = PrefixEnd.splitlines(keepends=True)
@@ -697,13 +697,22 @@ def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[A
 
         SortedNodes = sorted([(node, NodeType) for node, (pos, NodeType) in NodePositions.items()], key=lambda x: NodePositions[x[0]][0])
 
+        ResultNodes = []
+        ISNodeWithChange = False
+        for node, NodeType in SortedNodes:
+            if NodeType == 'NodeWithChange':
+                ISNodeWithChange = True
+            if NodeType == 'ParentNode' and ISNodeWithChange:
+                continue
+            ResultNodes.append((node, NodeType))
+
         if ChangeNodePrevContext:
             PrevContextEntry = (ChangeNodePrevContext, 'ChangeNodePrevContext')
-            for i, (_, node_type) in enumerate(SortedNodes):
+            for i, (_, node_type) in enumerate(ResultNodes):
                 if node_type == 'NodeWithChange':
-                    SortedNodes.insert(i, PrevContextEntry)
+                    ResultNodes.insert(i, PrevContextEntry)
                     break
-        return SortedNodes
+        return ResultNodes
 
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
