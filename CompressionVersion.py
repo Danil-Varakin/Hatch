@@ -442,12 +442,14 @@ def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode:
                 SourceCode, ErrorCode = UpdatingSourceCode(patch, match, SourceCode, language, NumberInsert)
                 if not SourceCode and ErrorCode != 3:
                     logger.info('The match did`t work correctly')
-                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
+                    while ErrorCode > 0:
+                        Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
                 elif not SourceCode and ErrorCode == 3:
                     Match, Patch, SourceCode, ErrorCode = AddMatchContext(OriginalSourceCode, PrevSourceCode, Match, Patch, NodesWithChange, action, SiblingNodesDict, ParentStructureForChangeNode, NumberInsert, language)
                 NumberInsert += 1
 
             if AgreeEachMatch and AgreeEachMatchCommand():
+                while ErrorCode > 0:
                     Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
 
         return  Match, Patch
@@ -527,7 +529,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             MatchString += GetParentText (node, MatchList, i, SourceCode, ParentBracketType)
 
         elif NodeType == 'NodeWithChange':
-            if i == 0:
+            if i == 0 and action != "add":
                 MatchString += "\n>>>"
             MatchString += f"\n {GetNodeText(node, SourceCode)} "
             IsNextExist = len(MatchList) > i + 1
