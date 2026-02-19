@@ -1,0 +1,16 @@
+### match
+```
+...
+ # ifndef ... 
+ namespace blink { ... 
+ struct BLINK_EXPORT WebLanguageDetectionDetails { ... 
+// lang value and the Accept-Language request header values.  >>> 
+ static void RecordAcceptLanguageAndXmlHtmlLangMetric(const WebDocument&);  <<< ... } ...  } ...  
+```
+### patch
+```
+  static void RecordAcceptLanguageAndXmlHtmlLangMetric(__VA_ARGS__); 
+  static void RecordAcceptLanguageAndXmlHtmlLangMetric_ChromiumImpl(__VA_ARGS__)
+
+```
+

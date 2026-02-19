@@ -1,26 +1,40 @@
-// Copyright (c) 2024 The Brave Authors. All rights reserved.
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this file,
-// You can obtain one at https://mozilla.org/MPL/2.0/.
-
+### match
+```
+...
+>>>
+```
+### patch
+```
 #include "brave/components/brave_page_graph/common/buildflags.h"
+```
 
-#include <v8/src/inspector/value-mirror.cc>
-
+### match
+```
+...
+#include "brave/components/brave_page_graph/common/buildflags.h"
+>>>
+```
+### patch
+```
 #if BUILDFLAG(ENABLE_BRAVE_PAGE_GRAPH)
 
 #include "brave/v8/include/v8-isolate-page-graph-utils.h"
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
+```
 
-// This file contains the implementation of the `SerializeValue` function. This
-// function is used in PageGraph for the serialization of JavaScript objects,
-// including those with non-enumerable and internal properties. To handle all
-// potential edge cases, such as invoking getter functions, incorporating
-// try/catch blocks, and appropriately responding to exceptions, the
-// `SerializeValue` function leverages the existing ValueMirror machinery used
-// by the Inspector Protocol.
-
+### match
+```
+...
+namespace v8_inspector {
+...
+>>>
+}
+...
+```
+### patch
+```
+#if BUILDFLAG(ENABLE_BRAVE_PAGE_GRAPH)
 namespace page_graph {
 
 namespace {
@@ -229,6 +243,7 @@ v8::Local<v8::Value> SerializeValue(v8::Local<v8::Context> context,
   return SerializeValue(context, value, 4);
 }
 
-}  // namespace v8::page_graph
+}  // namespace page_graph
 
 #endif  // BUILDFLAG(ENABLE_BRAVE_PAGE_GRAPH)
+```

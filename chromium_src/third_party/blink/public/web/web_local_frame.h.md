@@ -1,0 +1,19 @@
+### match
+```
+...
+ # ifndef ... 
+ namespace blink { ... 
+ class BLINK_EXPORT WebLocalFrame : public WebFrame { ... 
+virtual void SendPings(const WebURL& destination_url) = 0;  >>> 
+ virtual void SendAttributionSrc(const std::optional<Impression>&,
+                                  bool did_navigate) = 0;  <<< ... 
+// Navigation ----------------------------------------------------------
+ ... } ...  } ...  
+```
+### patch
+```
+  virtual void SendAttributionSrc(__VA_ARGS__) = 0; 
+  virtual void SetOriginForClearWindowNameCheck(const url::Origin&) = 0;
+
+```
+

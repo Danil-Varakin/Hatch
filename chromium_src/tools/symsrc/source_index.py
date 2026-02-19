@@ -55,7 +55,7 @@ def ExtractGitInfo(orig_func, local_filename):
 
 @override_utils.override_function(globals())
 def DirectoryIsPartOfPublicGitRepository(orig_func, local_dir):
-    if IsGitIgnored(local_dir, '.'):
+    if IsGitIgnored(local_dir, ''):
         return False
 
     return orig_func(local_dir)
