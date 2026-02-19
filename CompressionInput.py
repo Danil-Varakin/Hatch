@@ -49,8 +49,13 @@ def HandleMatchConflict(match: list[str], patch: list[str]):
 
 @log_function(args=False, result=False)
 def CallEditor(match: list[str], patch: list[str]):
-    temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8')
-    temp_filename = temp_file.name
+    with tempfile.NamedTemporaryFile(
+            mode='w+t',
+            delete=False,
+            encoding='utf-8',
+            newline=''
+    ) as temp_file:
+        temp_filename = temp_file.name
     try:
         success = CreateMarkdownInstructions(temp_filename, match, patch)
         if not success:

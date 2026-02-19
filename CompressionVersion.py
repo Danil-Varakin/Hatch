@@ -478,7 +478,12 @@ def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, N
     TempFilePath = None
     ErrorCode = 0
     try:
-        with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+                mode='w+t',
+                delete=False,
+                encoding='utf-8',
+                newline=''
+        ) as temp_file:
             temp_file.write(SourceCode)
             temp_file.seek(0)
             TempFilePath = temp_file.name
