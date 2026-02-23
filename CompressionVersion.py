@@ -540,7 +540,10 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             IsNextExist = len(MatchList) > i + 1
             if IsNextExist and NextType in ["ParentNode", 'SiblingNode']  or not NextType:
                 if not IsAddAction:
-                    MatchString += " <<< ... "
+                    if NextType == "ParentNode":
+                        MatchString += " <<< ... "
+                    else:
+                        MatchString += " <<< "
                 else:
                     MatchString += "\n >>> "
                     if not NextType or  NextType != 'SiblingNode':
@@ -626,7 +629,11 @@ def GetParentText (CurrentNode, MatchList, MatchListIndex, SourceCode, ParentBra
             if NodeText not in ParentText:
                 ParentText +=  f" {bracket} ... "
                 return ParentText
-    return f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}" + (f" {ParentBracketType} ... " if ParentBracketType else "")
+        if NodeText in ParentText:
+            pos = ParentText.find(NodeText)
+            return ParentText[:pos]
+
+    return f"\n {ParentText}" + (f" {ParentBracketType} ... " if ParentBracketType else "")
 
 
 @log_function(args=False, result=False)
