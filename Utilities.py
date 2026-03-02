@@ -236,3 +236,6 @@ def TokenIndexToStringIndex(TargetTokenIndex, SourceCode, TokenList):
             return -1
 
     return pos+1
+
+def IntervalsIntersect(a, b):
+    return a[0] <= b[1] and b[0] <= a[1]

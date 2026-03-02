@@ -1,6 +1,6 @@
 import re
-from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, NESTING_MARKERS, SPECIAL_OPERATORS_PATTERN, SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, COMMENT_PATTERN
-from Utilities import FindNthNOperators
+from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, NESTING_MARKERS, SPECIAL_OPERATORS_PATTERN, SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, COMMENT_PATTERN, STRING_PATTERNS
+from Utilities import FindNthNOperators, IntervalsIntersect
 from Logging import setup_logger, log_function
 
 logger = setup_logger()
@@ -28,14 +28,20 @@ def TokenizeCode(CodeString: str, Language: str):
 def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     CommentsList = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
+
+    StringsPattern =  STRING_PATTERNS[language.lower()]
+    StringsList = [(m.start(), m.end()) for m in re.finditer(StringsPattern, CodeString, re.DOTALL | re.MULTILINE)]
+
+    FilteredCommentsList = [interval for interval in CommentsList if not any(IntervalsIntersect(interval, other) for other in StringsList)]
+
     ReMatches = re.finditer(SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, CodeString)
     OperatorIndexesList = []
     for ReMatch in ReMatches:
         ReOperatorStart = ReMatch.start()
-        if not any(start <= ReOperatorStart < end for start, end in CommentsList):
+        if not any(start <= ReOperatorStart < end for start, end in FilteredCommentsList):
             OperatorIndexesList.append(ReOperatorStart)
-    IsSpecialOperatorsInCommentsList, SpecialOperatorIndexesList = IsSpecialOperatorsInComments(CodeString, CommentsList)
-    return OperatorIndexesList, IsSpecialOperatorsInCommentsList, CommentsList, SpecialOperatorIndexesList
+    IsSpecialOperatorsInCommentsList, SpecialOperatorIndexesList = IsSpecialOperatorsInComments(CodeString, FilteredCommentsList)
+    return OperatorIndexesList, IsSpecialOperatorsInCommentsList, FilteredCommentsList, SpecialOperatorIndexesList
 
 @log_function(args=False, result=False)
 def IsSpecialOperatorsInComments(CodeString, CommentsList):
