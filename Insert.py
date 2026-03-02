@@ -81,9 +81,6 @@ def Insert(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False)
         if CharPosition == -1:
             raise ValueError('Insertion position not found')
 
-        while len(SourceContent) > CharPosition + 1 and SourceContent[CharPosition + 1].isspace():
-            CharPosition += 1
-
         Patch = AddingTabs(Patch, CodeNestingLevel)
         ChangeEndIndex = 0
         if position == 'Next':
