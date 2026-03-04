@@ -223,8 +223,6 @@ def GetASTTree(CodeString: str, language):
     try:
         parser = get_parser(language)
         tree = parser.parse(CodeString.encode('utf-8'))
-        if tree.root_node.type == 'ERROR':
-            raise ValueError(f"A syntax error in the . AST file contains an ERROR node.")
         return tree
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
@@ -414,6 +412,7 @@ def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode:
             if not Change:
                 raise ValueError("Changes no found")
 
+            print(SourceCode[Change["start"]:Change["end"]+1])
             tree = GetASTTree(SourceCode, language)
             StartPoint, EndPoint = GetChangeStartEndPoint(SourceCode, Change)
             NodesWithChange = SearchNodesWithChange(StartPoint, EndPoint, tree)
