@@ -1,4 +1,0 @@
-include_rules = [
-  "+brave/components/ai_chat/core/common/buildflags",
-  "+brave/components/playlist/core/common",
-]
