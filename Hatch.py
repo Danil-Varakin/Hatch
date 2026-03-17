@@ -82,7 +82,7 @@ def ProcessGenerateMdMode(in_file, old_file_in, out_md, branch = None, language 
 
         Match, Patch =  RunAddInstruction(in_file, language, AgreeEachMatch= agree_each_match, MainBranch= effective_branch, OldFilePath= old_file_in)
         if Match and Patch:
-            success = CreateMarkdownInstructions(out_md, Match, Patch)
+            success = CreateMarkdownInstructions(out_md, Match, Patch, language)
 
             if success:
                 logger.info(f"Markdown-instructions have been successfully created: {out_md}")

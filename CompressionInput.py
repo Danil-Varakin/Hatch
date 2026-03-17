@@ -103,19 +103,18 @@ def AgreeEachMatchCommand():
 
 
 @log_function(args=False, result=False)
-def CreateMarkdownInstructions(OutPath: str, Match: list, Patch: list) -> bool:
+def CreateMarkdownInstructions(OutPath: str, Match: list, Patch: list, language: str) -> bool:
     try:
         with open(OutPath, 'w', encoding='utf-8') as MdFile:
             if not Match:
                 raise ValueError("The list of instructions is empty")
 
-            for idx  in range(len(Match)):
+            for idx in range(len(Match)):
                 MdFile.write(f"### match\n")
-                MdFile.write(f"```\n{Match[idx]}\n```\n")
+                MdFile.write(f"```{language}\n{Match[idx]}\n```\n")
 
                 MdFile.write(f"### patch\n")
-
-                MdFile.write(f"```\n{Patch[idx]}\n```\n\n")
+                MdFile.write(f"```{language}\n{Patch[idx]}\n```\n\n")
 
         logger.info(f"Markdown file has been created successfully: {OutPath}")
         return True

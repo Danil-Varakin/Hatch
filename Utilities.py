@@ -33,28 +33,9 @@ def WriteFile(FilePath, Result):
     except FileNotFoundError:
         logger.error(f"Error: file {FilePath} not found")
 
-@log_function(args=False, result=False)
-def WriteResultToMarkdown(output_file, match_result, change_dict):
-
-    try:
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write('### match\n')
-            f.write('```\n')
-            f.write(f'{match_result}\n')
-            f.write('```\n')
-            f.write('### patch\n')
-            f.write('```\n')
-            f.write(f"\n{change_dict['added']}\n")
-            f.write('```\n')
-        logger.info(f"Result successfully written to {output_file}")
-    except Exception as e:
-        logger.error(f"Error writing to Markdown file: {str(e)}")
-        raise
-
-@log_function(args=False, result=False)
 def MatchLoadFromString(StringOfMarkdownContent):
     try:
-        matches = re.findall(r'### match\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
+        matches = re.findall(r'### match\s*```[^\n]*\n(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
         if matches:
             return [match.strip() for match in matches]
         else:
@@ -62,6 +43,20 @@ def MatchLoadFromString(StringOfMarkdownContent):
     except ValueError as e:
         logger.error(f"Logic error: {e}")
         return []
+
+
+@log_function(args=False, result=False)
+def PatchLoadFromString(StringOfMarkdownContent):
+    try:
+        patches = re.findall(r'### patch\s*```[^\n]*\n(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
+        if patches:
+            return [patch[1:-1] if patch.startswith('\n') and patch.endswith('\n') else patch.strip() for patch in patches]
+        else:
+            raise ValueError("Patch not found")
+    except ValueError as e:
+        logger.error(f"Logic error: {e}")
+        return []
+
 
 @log_function(args=False, result=False)
 def ReadFileContents(PathFile, MainBranch):
@@ -82,17 +77,6 @@ def ReadFileContents(PathFile, MainBranch):
             logger.error(f"Error retrieving the old version of the file from the branch {MainBranch}: {str(e)}")
             raise
 
-@log_function(args=False, result=False)
-def PatchLoadFromString(StringOfMarkdownContent):
-    try:
-        patches = re.findall(r'### patch\s*```(.*?)```', StringOfMarkdownContent, re.IGNORECASE | re.DOTALL)
-        if patches:
-            return [patch[1:-1] if patch.startswith('\n') and patch.endswith('\n') else patch.strip() for patch in patches]
-        else:
-            raise ValueError("Patch not found")
-    except ValueError as e:
-        logger.error(f"Logic error: {e}")
-        return []
 
 @log_function(args=False, result=False)
 def DetectProgrammingLanguage(FileNameSourceCode):
