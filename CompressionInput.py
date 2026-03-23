@@ -8,7 +8,7 @@ from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def HandleMatchConflict(match: list[str], patch: list[str]):
+def HandleMatchConflict(match: list[str], patch: list[str], language: str):
     print("Fix the  matches or abort the program execution.")
 
     while True:
@@ -16,7 +16,7 @@ def HandleMatchConflict(match: list[str], patch: list[str]):
 
         if answer == 'Y':
 
-            Match, Patch = CallEditor(match, patch)
+            Match, Patch = CallEditor(match, patch, language)
 
             if not Match:
                 print("Warning: No match entries found in edited file.")
@@ -48,7 +48,7 @@ def HandleMatchConflict(match: list[str], patch: list[str]):
             print("Invalid input. Please enter Y or N.")
 
 @log_function(args=False, result=False)
-def CallEditor(match: list[str], patch: list[str]):
+def CallEditor(match: list[str], patch: list[str], language: str):
     with tempfile.NamedTemporaryFile(
             mode='w+t',
             delete=False,
@@ -57,7 +57,7 @@ def CallEditor(match: list[str], patch: list[str]):
     ) as temp_file:
         temp_filename = temp_file.name
     try:
-        success = CreateMarkdownInstructions(temp_filename, match, patch)
+        success = CreateMarkdownInstructions(temp_filename, match, patch, language)
         if not success:
             raise ValueError("Error creating temporary file. Aborting...")
 
@@ -83,6 +83,7 @@ def CallEditor(match: list[str], patch: list[str]):
 
         Match = ReceivingMatchOrPatchOrSourceCodeFromList(temp_filename, "Match")
         Patch = ReceivingMatchOrPatchOrSourceCodeFromList(temp_filename, "Patch")
+        Patch = [patch+"\n" for patch in Patch]
         return Match, Patch
 
     except Exception as e:

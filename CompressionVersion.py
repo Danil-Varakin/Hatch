@@ -461,7 +461,7 @@ def ResolvingConflictsWithVerification(Match: list[Any], Patch: list[Any], Sourc
     ErrorCode = 0
     while True:
         NewSourceCode = SourceCode
-        NewMatch, NewPatch = HandleMatchConflict(Match, Patch)
+        NewMatch, NewPatch = HandleMatchConflict(Match, Patch, language)
         NumberInsert = 0
         for m, p in zip(NewMatch, NewPatch):
             NewSourceCode, ErrorCode = UpdatingSourceCode(p, m, NewSourceCode, language, NumberInsert)

@@ -2,6 +2,8 @@ import os
 import re
 import importlib
 import subprocess
+import itertools
+import string
 from typing import Literal
 from constants import EXTENSIONS_FILE
 from Logging import setup_logger, log_function
@@ -223,3 +225,9 @@ def TokenIndexToStringIndex(TargetTokenIndex, SourceCode, TokenList):
 
 def IntervalsIntersect(a, b):
     return a[0] <= b[1] and b[0] <= a[1]
+
+@log_function(args=False, result=False)
+def LetterSequence():
+    for length in itertools.count(1):
+        for combo in itertools.product(string.ascii_lowercase, repeat=length):
+            yield ''.join(combo)
