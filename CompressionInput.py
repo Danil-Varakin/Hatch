@@ -8,7 +8,7 @@ from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList
 logger = setup_logger()
 
 @log_function(args=False, result=False)
-def HandleMatchConflict(match: list[str], patch: list[str]):
+def HandleMatchConflict(match: list[str], patch: list[str], language: str):
     print("Fix the  matches or abort the program execution.")
 
     while True:
@@ -16,7 +16,7 @@ def HandleMatchConflict(match: list[str], patch: list[str]):
 
         if answer == 'Y':
 
-            Match, Patch = CallEditor(match, patch)
+            Match, Patch = CallEditor(match, patch, language)
 
             if not Match:
                 print("Warning: No match entries found in edited file.")
@@ -48,11 +48,16 @@ def HandleMatchConflict(match: list[str], patch: list[str]):
             print("Invalid input. Please enter Y or N.")
 
 @log_function(args=False, result=False)
-def CallEditor(match: list[str], patch: list[str]):
-    temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8')
-    temp_filename = temp_file.name
+def CallEditor(match: list[str], patch: list[str], language: str):
+    with tempfile.NamedTemporaryFile(
+            mode='w+t',
+            delete=False,
+            encoding='utf-8',
+            newline=''
+    ) as temp_file:
+        temp_filename = temp_file.name
     try:
-        success = CreateMarkdownInstructions(temp_filename, match, patch)
+        success = CreateMarkdownInstructions(temp_filename, match, patch, language)
         if not success:
             raise ValueError("Error creating temporary file. Aborting...")
 
@@ -78,6 +83,7 @@ def CallEditor(match: list[str], patch: list[str]):
 
         Match = ReceivingMatchOrPatchOrSourceCodeFromList(temp_filename, "Match")
         Patch = ReceivingMatchOrPatchOrSourceCodeFromList(temp_filename, "Patch")
+        Patch = [patch+"\n" for patch in Patch]
         return Match, Patch
 
     except Exception as e:
@@ -98,19 +104,18 @@ def AgreeEachMatchCommand():
 
 
 @log_function(args=False, result=False)
-def CreateMarkdownInstructions(OutPath: str, Match: list, Patch: list) -> bool:
+def CreateMarkdownInstructions(OutPath: str, Match: list, Patch: list, language: str) -> bool:
     try:
         with open(OutPath, 'w', encoding='utf-8') as MdFile:
             if not Match:
                 raise ValueError("The list of instructions is empty")
 
-            for idx  in range(len(Match)):
+            for idx in range(len(Match)):
                 MdFile.write(f"### match\n")
-                MdFile.write(f"```\n{Match[idx]}\n```\n")
+                MdFile.write(f"```{language}\n{Match[idx]}\n```\n")
 
                 MdFile.write(f"### patch\n")
-
-                MdFile.write(f"```\n{Patch[idx]}\n```\n\n")
+                MdFile.write(f"```{language}\n{Patch[idx]}\n```\n\n")
 
         logger.info(f"Markdown file has been created successfully: {OutPath}")
         return True

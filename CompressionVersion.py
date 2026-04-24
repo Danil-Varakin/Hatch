@@ -77,7 +77,7 @@ def GetChangeStartEndPoint(CodeAnalyze: str, change: Dict[str, Any]) -> Any:
     StartLine = len(LinesStartList) - 1
     StartCol = len(LinesStartList[-1]) - 1 if LinesStartList else 0
 
-    while ChangeEnd >= ChangeStart and CodeAnalyze[ChangeEnd].isspace():
+    while len(CodeAnalyze) > ChangeEnd >= ChangeStart and CodeAnalyze[ChangeEnd].isspace():
         ChangeEnd -= 1
     PrefixEnd = CodeAnalyze[:ChangeEnd + 1]
     LinesEnd = PrefixEnd.splitlines(keepends=True)
@@ -223,8 +223,6 @@ def GetASTTree(CodeString: str, language):
     try:
         parser = get_parser(language)
         tree = parser.parse(CodeString.encode('utf-8'))
-        if tree.root_node.type == 'ERROR':
-            raise ValueError(f"A syntax error in the . AST file contains an ERROR node.")
         return tree
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
@@ -414,6 +412,7 @@ def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode:
             if not Change:
                 raise ValueError("Changes no found")
 
+            print(SourceCode[Change["start"]:Change["end"]+1])
             tree = GetASTTree(SourceCode, language)
             StartPoint, EndPoint = GetChangeStartEndPoint(SourceCode, Change)
             NodesWithChange = SearchNodesWithChange(StartPoint, EndPoint, tree)
@@ -442,12 +441,14 @@ def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode:
                 SourceCode, ErrorCode = UpdatingSourceCode(patch, match, SourceCode, language, NumberInsert)
                 if not SourceCode and ErrorCode != 3:
                     logger.info('The match did`t work correctly')
-                    Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
+                    while ErrorCode > 0:
+                        Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
                 elif not SourceCode and ErrorCode == 3:
                     Match, Patch, SourceCode, ErrorCode = AddMatchContext(OriginalSourceCode, PrevSourceCode, Match, Patch, NodesWithChange, action, SiblingNodesDict, ParentStructureForChangeNode, NumberInsert, language)
                 NumberInsert += 1
 
             if AgreeEachMatch and AgreeEachMatchCommand():
+                while ErrorCode > 0:
                     Match, Patch, SourceCode, ErrorCode = ResolvingConflictsWithVerification(Match, Patch, OriginalSourceCode, language)
 
         return  Match, Patch
@@ -460,7 +461,7 @@ def ResolvingConflictsWithVerification(Match: list[Any], Patch: list[Any], Sourc
     ErrorCode = 0
     while True:
         NewSourceCode = SourceCode
-        NewMatch, NewPatch = HandleMatchConflict(Match, Patch)
+        NewMatch, NewPatch = HandleMatchConflict(Match, Patch, language)
         NumberInsert = 0
         for m, p in zip(NewMatch, NewPatch):
             NewSourceCode, ErrorCode = UpdatingSourceCode(p, m, NewSourceCode, language, NumberInsert)
@@ -476,7 +477,12 @@ def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, N
     TempFilePath = None
     ErrorCode = 0
     try:
-        with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+                mode='w+t',
+                delete=False,
+                encoding='utf-8',
+                newline=''
+        ) as temp_file:
             temp_file.write(SourceCode)
             temp_file.seek(0)
             TempFilePath = temp_file.name
@@ -527,13 +533,16 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             MatchString += GetParentText (node, MatchList, i, SourceCode, ParentBracketType)
 
         elif NodeType == 'NodeWithChange':
-            if i == 0:
+            if i == 0 and action != "add":
                 MatchString += "\n>>>"
             MatchString += f"\n {GetNodeText(node, SourceCode)} "
             IsNextExist = len(MatchList) > i + 1
             if IsNextExist and NextType in ["ParentNode", 'SiblingNode']  or not NextType:
                 if not IsAddAction:
-                    MatchString += " <<< ... "
+                    if NextType == "ParentNode":
+                        MatchString += " <<< ... "
+                    else:
+                        MatchString += " <<< "
                 else:
                     MatchString += "\n >>> "
                     if not NextType or  NextType != 'SiblingNode':
@@ -619,7 +628,11 @@ def GetParentText (CurrentNode, MatchList, MatchListIndex, SourceCode, ParentBra
             if NodeText not in ParentText:
                 ParentText +=  f" {bracket} ... "
                 return ParentText
-    return f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}" + (f" {ParentBracketType} ... " if ParentBracketType else "")
+        if NodeText in ParentText:
+            pos = ParentText.find(NodeText)
+            return ParentText[:pos]
+
+    return f"\n {ParentText}" + (f" {ParentBracketType} ... " if ParentBracketType else "")
 
 
 @log_function(args=False, result=False)
@@ -697,13 +710,22 @@ def CollectingMatchList(NodesWithChanges: list[Any], NearestStructs: list[list[A
 
         SortedNodes = sorted([(node, NodeType) for node, (pos, NodeType) in NodePositions.items()], key=lambda x: NodePositions[x[0]][0])
 
+        ResultNodes = []
+        ISNodeWithChange = False
+        for node, NodeType in SortedNodes:
+            if NodeType == 'NodeWithChange':
+                ISNodeWithChange = True
+            if NodeType == 'ParentNode' and ISNodeWithChange:
+                continue
+            ResultNodes.append((node, NodeType))
+
         if ChangeNodePrevContext:
             PrevContextEntry = (ChangeNodePrevContext, 'ChangeNodePrevContext')
-            for i, (_, node_type) in enumerate(SortedNodes):
+            for i, (_, node_type) in enumerate(ResultNodes):
                 if node_type == 'NodeWithChange':
-                    SortedNodes.insert(i, PrevContextEntry)
+                    ResultNodes.insert(i, PrevContextEntry)
                     break
-        return SortedNodes
+        return ResultNodes
 
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
