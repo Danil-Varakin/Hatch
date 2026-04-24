@@ -8,13 +8,49 @@ Hatch is designed to simplify the process of applying Git patches. Traditional p
 
 Hatch is a prototype tool for applying Git patches, functioning as a recursive interpreter for the Hatch logical language (translated as "hatch"). The language uses six operators: `...`, `>>>`, `<<<`, `^..`, `..^`, `^n..`.
 
-#№## Hatch:
+### Hatch:
 - Parses Markdown files containing comments, Hatch instructions, and patch content.
 - Tokenizes code and identifies positions for inserting changes.
 - Supports languages like Python and C++, accounting for nesting and special operators.
+- Can automatically **generate** Hatch instructions by comparing two versions of a file.
 
+## Installation
+
+### Quick Setup from Repository
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/Danil-Varakin/Hatch.git
+cd Hatch
+```
+
+2. **Create a virtual environment:**
+```bash
+python -m venv venv
+```
+
+3. **Activate the virtual environment:**
+
+   **Windows:**
+```bash
+venv\Scripts\activate
+```
+
+   **Linux/Mac:**
+```bash
+source venv/bin/activate
+```
+
+4. **Install the project:**
+```bash
+pip install -e .
+```
 
 ## Usage
+
+Hatch provides two commands: `apply` and `generate`.
+
+### apply — Apply patch instructions to a source file
 
 1. Prepare a Markdown file (e.g., `example.md`):
    ```markdown
@@ -24,23 +60,44 @@ Hatch is a prototype tool for applying Git patches, functioning as a recursive i
    Your Patch should be here.
    ```
 2. Prepare the source file (e.g., `example.cpp`).
-3. Specify the programming language (e.g., `cpp`) during processing(The default value is relative to the file extension).
-4. Run the processing via the command line:
+3. Run via the command line:
    ```bash
-   python source/MainCMD.py --match test/example.md --in source/example.cpp --out result.cpp
+   python Hatch.py apply --match example.md --in example.cpp --out result.cpp
    ```
 
-  #### Command-Line Options
+#### apply Options
 
-  ```
-  options:
-    -h, --help           Show this help message and exit
-    --match MATCH        Path to the match file (e.g., file.md)
-    --patch PATCH        Path to the patch file, optional (e.g., patch.md)
-    --in IN_FILE         Path to the input file (e.g., 1.cpp)
-    --out OUT            Path to the output file (e.g., 1_r.txt)
-    --language LANGUAGE  Programming language (e.g., cpp)
-  ```
+```
+options:
+  -h, --help           Show this help message and exit
+  --match MATCH        Path to the match file (e.g., changes.md)
+  --patch PATCH        Path to separate patch file, optional (e.g., patch.md)
+  --in IN_FILE         Path to the input source file (e.g., main.cpp)
+  --out OUT            Path to the output file (e.g., main_patched.cpp)
+  --language LANGUAGE  Programming language (e.g., cpp, python). Auto-detected if not specified.
+```
+
+### generate — Generate Hatch instructions from file differences
+
+Compares two versions of a file and automatically produces a `.md` file with Hatch match/patch instructions.
+
+```bash
+python Hatch.py generate --in new_version.cpp --in-old old_version.cpp --out changes.md
+```
+
+#### generate Options
+
+```
+options:
+  -h, --help           Show this help message and exit
+  --in IN_FILE         Path to the new version of the file (e.g., src/main.cpp)
+  --in-old OLD_IN_FILE Path to the old version of the file (e.g., src/main_old.cpp)
+  --out OUT_FILE       Path to the output markdown file (e.g., changes.md)
+  --branch BRANCH      Git branch for comparison (default: master)
+  --language LANGUAGE  Programming language (e.g., cpp, python). Auto-detected if not specified.
+  -a, --agreement      Enable confirmation mode for each individual match
+```
+
 ## Hatch Language Operators
 
 Hatch uses a logical language with six main operators:
@@ -54,236 +111,158 @@ Hatch uses a logical language with six main operators:
 
 ## Patch Application Examples
 
-### Test 1: Insertion Before Closing Parenthesis
+The following examples are real Hatch instructions from the [MatchPatch](https://github.com/Kirillkadr/MatchPatch) repository, which patches Chromium source files.
 
-**Source Code**:
-```cpp
-#include <iostream>
+### Example 1: Adding an Include Before a Namespace (`content/common/features.cc`)
 
-class Calculator {
-public:
-    double calculate(double x, double y) {
-        double result = x + y;
-        std::cout << "Calculation in progress, intermediate result: " << result << std::endl;
-        result *= 1.5; // Scale result
-        if (result > 0.0) {
-
-        }
-        return result;
-    }
-};
-```
+Inserts `#include "base/feature_override.h"` right after the existing features header include, before the standard library includes.
 
 **Instruction**:
 ```markdown
-### match:
-...class Calculator {...double calculate(...)...if (result > 0.0) >>> 
+### match
+```cpp
 ...
+// found in the LICENSE file.
+ #include "content/common/features.h"
+ 
+ >>> 
+#include "base/feature_list.h"
+
+ ... 
+```
 ### patch
-std::cout << "Calculation in progress, intermediate result: " << result << std::endl;result *= 1.5; // Scale result
-```
-
-**Result**:
 ```cpp
-#include <iostream>
+#include "base/feature_override.h"
+#include "build/build_config.h"
 
-class Calculator {
-public:
-    double calculate(double x, double y) {
-        double result = x + y;
-        std::cout << "Calculation in progress, intermediate result: " << result << std::endl;
-        result *= 1.5; // Scale result
-        if (result > 0.0) std::cout << "Calculation in progress, intermediate result: " << result << std::endl;result *= 1.5; // Scale result 
-        {
-        }
-        return result;
-    }
-};
+```
 ```
 
-### Test 2: Replacement and Insertion Using `^n..`
+---
 
-**Source Code**:
-```cpp
-func VB   (asass) {
-    class FF {
-        class GG {
-        }
-    }
-void f {
-template<typename T>
-void f() {
-  {const int x = 10;}
-  if ( x > 10) {
-    for (;;) {
-      if (x > 10) {
-         std::cout << "abc";
-         std::cout << "edf";
-         77
-      }- 9 ()
-    }- 9
-    register
-    int
-  }- 9
-  zxc
-  66 -- () 33
-}- 9 8
-```
+### Example 2: Overriding Feature Defaults Inside a Namespace (`content/browser/shared_storage/shared_storage_features.cc`)
+
+First inserts a new include, then uses `^..` to find the first occurrence of the closing namespace brace and inserts `OVERRIDE_FEATURE_DEFAULT_STATES` before it.
 
 **Instruction**:
 ```markdown
-### match:
+### match
+```cpp
 ...
-void ^3.. >>>f(...) <<< {...}...
+// found in the LICENSE file.
+ #include "content/browser/shared_storage/shared_storage_features.h"
+ 
+ >>> 
+namespace content::features {
+ ... 
+```
 ### patch
-print("[INFO]: ")
-```
-
-**Result**:
 ```cpp
-func VB   (asass) {
-    class FF {
-        class GG {
-        }
-    }
-void f {
-template<typename T>
-print("[INFO]: ") {
-  {const int x = 10;}
-  if ( x > 10) {
-    for (;;) {
-      if (x > 10) {
-         std::cout << "abc";
-         std::cout << "edf";
-         77
-      }- 9 ()
-    }- 9
-    register
-    int
-  }- 9
-  zxc
-  66 -- () 33
-}- 9 8
+#include "base/feature_override.h"
+
 ```
 
-
-### Test 3: Insertion After Closing Brace
-
-**Source Code**:
+### match
 ```cpp
-std::unique_ptr<VerifiedContents> VerifiedContents::CreateFromFile(
-    base::span<const uint8_t> public_key,
-    const base::FilePath& path) {
-  std::string contents;
-  if (!base::ReadFileToString(path, &contents))
-    return nullptr;
-  return Create(public_key, contents);
-}
+...
+ 
+ namespace content::features { ... 
+ 6.0 
+ ) 
+ ; 
+ >>> 
+ ... } ...  
 ```
+### patch
+```cpp
+OVERRIDE_FEATURE_DEFAULT_STATES({{
+    {kSharedStorageSelectURLLimit, base::FEATURE_DISABLED_BY_DEFAULT},
+}});
+
+```
+```
+
+---
+
+### Example 3: Inserting a New Method After an Existing One (`content/browser/service_worker/service_worker_content_settings_proxy_impl.cc`)
+
+Finds the end of `RequestFileSystemAccessSync` inside the `content` namespace and inserts a new `GetBraveShieldsSettings` method right after its closing brace.
 
 **Instruction**:
 ```markdown
-### match:
-...VerifiedContents::CreateFromFile ^.. { ...
-}>>>
+### match
+```cpp
 ...
+ 
+ namespace content { ... 
+ 
+ void ServiceWorkerContentSettingsProxyImpl::RequestFileSystemAccessSync(
+    RequestFileSystemAccessSyncCallback callback) { ... 
+mojo::ReportBadMessage(
+      "The FileSystem API is not exposed to service workers "
+      "but somehow a service worker requested access.");
+ } 
+ >>> 
+ ... } ...  
+```
 ### patch
-_ChromiumImpl
-```
-
-**Result**:
 ```cpp
-std::unique_ptr<VerifiedContents> VerifiedContents::CreateFromFile(
-    base::span<const uint8_t> public_key,
-    const base::FilePath& path) {
-  std::string contents;
-  if (!base::ReadFileToString(path, &contents))
-    return nullptr;
-  return Create(public_key, contents);
-}
-_ChromiumImpl
-```
-
-### Test 4: Replacement and Insertion using `..^`
-
-**Source Code**:
-```cpp
-class BraveSearchTest : public InProcessBrowserTest {
- public:
-  BraveSearchTest() = default;
-
-  void SetUpOnMainThread() override {
-    InProcessBrowserTest::SetUpOnMainThread();
-    mock_cert_verifier_.mock_cert_verifier()->set_default_result(net::OK);
-    host_resolver()->AddRule("*", "127.0.0.1");
-
-    https_server_ = std::make_unique<net::EmbeddedTestServer>(
-        net::test_server::EmbeddedTestServer::TYPE_HTTPS);
-    https_server_->RegisterRequestHandler(base::BindRepeating(
-        &BraveSearchTest::HandleRequest, base::Unretained(this)));
-
-    base::FilePath test_data_dir;
-    base::PathService::Get(brave::DIR_TEST_DATA, &test_data_dir);
-    test_data_dir = test_data_dir.AppendASCII(kEmbeddedTestServerDirectory);
-    https_server_->ServeFilesFromDirectory(test_data_dir);
-
-    ASSERT_TRUE(https_server_->Start());
-    GURL url = https_server()->GetURL("google.com", "/search");
-    brave_search::BraveSearchFallbackHost::SetBackupProviderForTest(url);
-
-    // Force default search engine to Google
-    // Some tests will fail if Brave is default
-    auto* template_url_service =
-        TemplateURLServiceFactory::GetForProfile(browser()->profile());
-    TemplateURL* google = template_url_service->GetTemplateURLForKeyword(u":g");
-    template_url_service->SetUserSelectedDefaultSearchProvider(google);
+void ServiceWorkerContentSettingsProxyImpl::GetBraveShieldsSettings(
+    GetBraveShieldsSettingsCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  // May be shutting down.
+  if (!context_wrapper_->browser_context()) {
+    std::move(callback).Run(brave_shields::mojom::ShieldsSettings::New());
+    return;
   }
-};
+  // Shields should also work in opaque origins.
+  const GURL url = origin_.GetTupleOrPrecursorTupleIfOpaque().GetURL();
+  std::move(callback).Run(
+      GetContentClient()->browser()->WorkerGetBraveShieldSettings(
+          url, context_wrapper_->browser_context()));
+}
+
 ```
+```
+
+---
+
+### Example 4: Inserting a Method Inside Nested Namespaces (`content/browser/devtools/protocol/network_handler.cc`)
+
+Navigates through two nested namespaces (`content` → `protocol`) and inserts `RequestAdblockInfoReceived` after the closing brace of `ConfigureDurableMessages`.
 
 **Instruction**:
 ```markdown
-### match:
-...
-class ..^ {...>>>};...
-### patch
-print("[INFO]: ")
-```
-
-**Result**:
+### match
 ```cpp
-class BraveSearchTest : public InProcessBrowserTest {
- public:
-  BraveSearchTest() = default;
-
-  void SetUpOnMainThread() override {
-    InProcessBrowserTest::SetUpOnMainThread();
-    mock_cert_verifier_.mock_cert_verifier()->set_default_result(net::OK);
-    host_resolver()->AddRule("*", "127.0.0.1");
-
-    https_server_ = std::make_unique<net::EmbeddedTestServer>(
-        net::test_server::EmbeddedTestServer::TYPE_HTTPS);
-    https_server_->RegisterRequestHandler(base::BindRepeating(
-        &BraveSearchTest::HandleRequest, base::Unretained(this)));
-
-    base::FilePath test_data_dir;
-    base::PathService::Get(brave::DIR_TEST_DATA, &test_data_dir);
-    test_data_dir = test_data_dir.AppendASCII(kEmbeddedTestServerDirectory);
-    https_server_->ServeFilesFromDirectory(test_data_dir);
-
-    ASSERT_TRUE(https_server_->Start());
-    GURL url = https_server()->GetURL("google.com", "/search");
-    brave_search::BraveSearchFallbackHost::SetBackupProviderForTest(url);
-
-    // Force default search engine to Google
-    // Some tests will fail if Brave is default
-    auto* template_url_service =
-        TemplateURLServiceFactory::GetForProfile(browser()->profile());
-    TemplateURL* google = template_url_service->GetTemplateURLForKeyword(u":g");
-    template_url_service->SetUserSelectedDefaultSearchProvider(google);
+...
+ 
+ namespace content { ... 
+ 
+ namespace protocol { ... 
+ 
+ void NetworkHandler::ConfigureDurableMessages(
+    std::optional<int> max_total_size,
+    std::optional<int> max_resource_size,
+    std::unique_ptr<ConfigureDurableMessagesCallback> callback) { ... 
+MaybeEnableDurableMessages(base::BindOnce(
+      &ConfigureDurableMessagesCallback::sendSuccess, std::move(callback)));
+ } 
+ >>> 
+ ... } ...  } ...  
+```
+### patch
+```cpp
+void NetworkHandler::RequestAdblockInfoReceived(
+    const std::string& request_id,
+    std::unique_ptr<protocol::Network::AdblockInfo> info) {
+  if (!enabled_) {
+    return;
   }
-print("[INFO]: ")
-};
+  frontend_->RequestAdblockInfoReceived(request_id, std::move(info));
+}
+
+```
 ```
 
 ## Architecture and Repository Structure
@@ -292,19 +271,23 @@ The prototype is written in Python and uses `pytest` for testing. The project st
 
 | File/Directory | Description |
 |----------------|-------------|
-| `unique3.cpp`, `unique5.cpp`, ... | C++ source files for testing |
-| `unique3.md`, `unique5.md`, ... | Markdown files with instructions and patches for testing |
-| `test/PassedTests/` | Test files (C++ and Markdown) for successful scenarios |
-| `test/FailedTests/` | Test files for error scenarios |
+| `Hatch.py` | Main CLI entry point with `apply` and `generate` subcommands |
 | `constants.py` | Constants such as Hatch operators, supported languages, and extensions |
 | `Insert.py` | Logic for inserting and replacing patches in source code |
-| `MainCMD.py` | Entry point for the command-line interface |
-| `MainTest.py` | Module for automated testing |
 | `SearchCode.py` | Logic for searching insertion positions in code |
 | `TokenizeCode.py` | Code tokenization with support for Hatch operators |
 | `Utilities.py` | Utility functions for file reading/writing and Markdown parsing |
-| `CodeComprasion.py ` | The future logic of creating a Match based on the modified code|
+| `Logging.py` | Colorized logging system with truncation support |
+| `getChange.py` | Logic for detecting code changes between two file versions |
+| `gitUtils.py` | Git utilities: reading commits from branches, computing diffs |
+| `CompressionVersion.py` | Generates Hatch match/patch instructions from file differences |
+| `CompressionInput.py` | Creates Markdown instruction files from match/patch pairs |
+| `CompressionConstants/` | Per-language constants for the instruction generation engine |
+| `MainTest.py` | Module for automated testing |
+| `pyproject.toml` | Package configuration and dependencies |
+| `test/PassedTests/` | Test files (C++ and Markdown) for successful scenarios |
+| `test/FailedTests/` | Test files for error scenarios |
 
 ## Conclusion
 
-Hatch is an experimental tool for managing Git patches through the Hatch logical language, simplifying and structuring the code modification process. The tool is under active development, and we welcome any suggestions and contributions to the project via [GitHub](https://github.com/Kirillkadr/Hatch).
+Hatch is an experimental tool for managing Git patches through the Hatch logical language, simplifying and structuring the code modification process. The tool is under active development, and we welcome any suggestions and contributions to the project via [GitHub](https://github.com/Danil-Varakin/Hatch).

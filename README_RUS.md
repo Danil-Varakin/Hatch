@@ -4,50 +4,54 @@
 
 Hatch разработан для упрощения процесса применения патчей Git. Традиционные патчи сложно анализировать и применять, особенно в крупных проектах. Логический язык Hatch позволяет описывать изменения декларативно, улучшая читаемость и автоматизируя процесс.
 
-## Инициализация
-
-### Быстрая установка из репозитория
-
-1. **Клонируйте репозиторий:**
-```bash
-   git clone https://github.com/Danil-Varakin/Hatch.git
-   cd Hatch
-```
-
-2. **Создайте виртуальное окружение:**
-```bash
-   python -m venv venv
-```
-
-3. **Активируйте виртуальное окружение:**
-   
-   **Windows:**
-```bash
-   venv\Scripts\activate
-```
-   
-   **Linux/Mac:**
-```bash
-   source venv/bin/activate
-```
-
-4. **Установите проект:**
-```bash
-   pip install -e .
-```
-
 ## В двух словах
 
 Hatch — это прототип инструмента для применения патчей Git, работающий как рекурсивный интерпретатор для логического языка Hatch (переводится как «Люк»). Язык использует шесть операторов: `...`, `>>>`, `<<<`, `^..`, `..^`, `^n..`.
 
-
-#### Hatch:
+### Hatch:
 
 - Разбирает файлы Markdown, содержащие комментарии, инструкции Hatch и содержимое патча.
 - Токенизирует код и определяет позиции для вставки изменений.
 - Поддерживает языки, такие как Python и C++, учитывая вложенность и специальные операторы.
+- Умеет автоматически **генерировать** инструкции Hatch, сравнивая две версии файла.
+
+## Инициализация
+
+### Быстрая установка из репозитория
+
+1. **Клонируйте репозиторий:**
+```bash
+git clone https://github.com/Danil-Varakin/Hatch.git
+cd Hatch
+```
+
+2. **Создайте виртуальное окружение:**
+```bash
+python -m venv venv
+```
+
+3. **Активируйте виртуальное окружение:**
+   
+   **Windows:**
+```bash
+venv\Scripts\activate
+```
+   
+   **Linux/Mac:**
+```bash
+source venv/bin/activate
+```
+
+4. **Установите проект:**
+```bash
+pip install -e .
+```
 
 ## Использование
+
+Hatch предоставляет две команды: `apply` и `generate`.
+
+### apply — Применить инструкции патча к исходному файлу
 
 1. Подготовьте файл Markdown (например, `example.md`):
 
@@ -58,22 +62,44 @@ Hatch — это прототип инструмента для применен
    Здесь должно быть ваше исправление.
    ```
 2. Подготовьте исходный файл (например, `example.cpp`).
-3. Укажите язык программирования (например, `cpp`) во время обработки(По умолчанию язык выбирается от расширения файла).
-4. Запустите обработку через командную строку:
+3. Запустите обработку через командную строку:
 
    ```bash
-    MainCMD.py [-h] [--match MATCH] [--patch PATCH] [--in IN_FILE] [--out OUT] [--language LANGUAGE]
+   python Hatch.py apply --match example.md --in example.cpp --out result.cpp
    ```
-  #### Опции командной строки
-  ```
-  Опции:
+
+#### Опции команды apply
+
+```
+Опции:
   -h, --help           Показать это справочное сообщение и выйти
-  --match MATCH        Путь к файлу соответствия (например, file.md)
-  --patch PATCH        Путь к файлу патча, необязательно (например, patch.md)
-  --in IN_FILE         Путь к входному файлу (например, 1.cpp)
-  --out OUT            Путь к выходному файлу (например, 1_r.txt)
-  --language LANGUAGE  Язык программирования (например, cpp)
-  ```
+  --match MATCH        Путь к файлу соответствия (например, changes.md)
+  --patch PATCH        Путь к отдельному файлу патча, необязательно (например, patch.md)
+  --in IN_FILE         Путь к входному исходному файлу (например, main.cpp)
+  --out OUT            Путь к выходному файлу (например, main_patched.cpp)
+  --language LANGUAGE  Язык программирования (например, cpp, python). Определяется автоматически, если не указан.
+```
+
+### generate — Сгенерировать инструкции Hatch из различий между файлами
+
+Сравнивает две версии файла и автоматически создаёт `.md` файл с инструкциями match/patch.
+
+```bash
+python Hatch.py generate --in new_version.cpp --in-old old_version.cpp --out changes.md
+```
+
+#### Опции команды generate
+
+```
+Опции:
+  -h, --help           Показать это справочное сообщение и выйти
+  --in IN_FILE         Путь к новой версии файла (например, src/main.cpp)
+  --in-old OLD_IN_FILE Путь к старой версии файла (например, src/main_old.cpp)
+  --out OUT_FILE       Путь к выходному файлу Markdown (например, changes.md)
+  --branch BRANCH      Ветка Git для сравнения (по умолчанию: master)
+  --language LANGUAGE  Язык программирования (например, cpp, python). Определяется автоматически, если не указан.
+  -a, --agreement      Включить режим подтверждения для каждого отдельного совпадения
+```
 
 ## Операторы языка Hatch
 
@@ -88,246 +114,158 @@ Hatch использует логический язык с шестью осн�
 
 ## Примеры применения патчей
 
-### Тест 1: Вставка перед закрывающей скобкой
+Следующие примеры — это реальные инструкции Hatch из репозитория [MatchPatch](https://github.com/Kirillkadr/MatchPatch), который патчит исходные файлы Chromium.
 
-**Исходный код**:
+### Пример 1: Добавление include перед namespace (`content/common/features.cc`)
 
-```cpp
-#include <iostream>
-
-class Calculator {
-public:
-    double calculate(double x, double y) {
-        double result = x + y;
-        std::cout << "Calculation in progress, intermediate result: " << result << std::endl;
-        result *= 1.5; // Scale result
-        if (result > 0.0) {
-
-        }
-        return result;
-    }
-};
-```
+Вставляет `#include "base/feature_override.h"` сразу после существующего заголовочного include, перед стандартными библиотечными includes.
 
 **Инструкция**:
-
 ```markdown
-### match:
-...class Calculator {...double calculate(...)...if (result > 0.0) >>> 
+### match
+```cpp
 ...
+// found in the LICENSE file.
+ #include "content/common/features.h"
+ 
+ >>> 
+#include "base/feature_list.h"
+
+ ... 
+```
 ### patch
-std::cout << "Calculation in progress, intermediate result: " << result << std::endl;result *= 1.5; // Scale result
-```
-
-**Результат**:
-
 ```cpp
-#include <iostream>
+#include "base/feature_override.h"
+#include "build/build_config.h"
 
-class Calculator {
-public:
-    double calculate(double x, double y) {
-        double result = x + y;
-        std::cout << "Calculation in progress, intermediate result: " << result << std::endl;
-        result *= 1.5; // Scale result
-        if (result > 0.0) std::cout << "Calculation in progress, intermediate result: " << result << std::endl;result *= 1.5; // Scale result {
-        }
-        return result;
-    }
-};
+```
 ```
 
-### Тест 2: Замена и вставка с использованием `^n..`
+---
 
-**Исходный код**:
+### Пример 2: Переопределение дефолтных значений фич внутри namespace (`content/browser/shared_storage/shared_storage_features.cc`)
 
-```cpp
-func VB   (asass) {
-    class FF {
-        class GG {
-        }
-    }
-void f {
-template<typename T>
-void f() {
-  {const int x = 10;}
-  if ( x > 10) {
-    for (;;) {
-      if (x > 10) {
-         std::cout << "abc";
-         std::cout << "edf";
-         77
-      }- 9 ()
-    }- 9
-    register
-    int
-  }- 9
-  zxc
-  66 -- () 33
-}- 9 8
-```
+Сначала вставляет новый include, затем использует `^..` для нахождения первого вхождения закрывающей скобки namespace и вставляет `OVERRIDE_FEATURE_DEFAULT_STATES` перед ней.
 
 **Инструкция**:
-
 ```markdown
-### match:
+### match
+```cpp
 ...
-void ^3.. >>> f(...) <<< {...}...
+// found in the LICENSE file.
+ #include "content/browser/shared_storage/shared_storage_features.h"
+ 
+ >>> 
+namespace content::features {
+ ... 
+```
 ### patch
-print("[INFO]: ")
-```
-
-**Результат**:
-
 ```cpp
-func VB   (asass) {
-    class FF {
-        class GG {
-        }
-    }
-void f {
-template<typename T>
-print("[INFO]: ") {
-  {const int x = 10;}
-  if ( x > 10) {
-    for (;;) {
-      if (x > 10) {
-         std::cout << "abc";
-         std::cout << "edf";
-         77
-      }- 9 ()
-    }- 9
-    register
-    int
-  }- 9
-  zxc
-  66 -- () 33
-}- 9 8
+#include "base/feature_override.h"
+
 ```
 
-### Тест 3: Вставка после закрывающей скобки
-
-**Исходный код**:
-
+### match
 ```cpp
-std::unique_ptr<VerifiedContents> VerifiedContents::CreateFromFile(
-    base::span<const uint8_t> public_key,
-    const base::FilePath& path) {
-  std::string contents;
-  if (!base::ReadFileToString(path, &contents))
-    return nullptr;
-  return Create(public_key, contents);
-}
+...
+ 
+ namespace content::features { ... 
+ 6.0 
+ ) 
+ ; 
+ >>> 
+ ... } ...  
 ```
+### patch
+```cpp
+OVERRIDE_FEATURE_DEFAULT_STATES({{
+    {kSharedStorageSelectURLLimit, base::FEATURE_DISABLED_BY_DEFAULT},
+}});
+
+```
+```
+
+---
+
+### Пример 3: Вставка нового метода после существующего (`content/browser/service_worker/service_worker_content_settings_proxy_impl.cc`)
+
+Находит конец метода `RequestFileSystemAccessSync` внутри namespace `content` и вставляет новый метод `GetBraveShieldsSettings` сразу после его закрывающей скобки.
 
 **Инструкция**:
-
 ```markdown
-### match:
-...VerifiedContents::CreateFromFile ^.. { ...
-} >>> 
+### match
+```cpp
 ...
+ 
+ namespace content { ... 
+ 
+ void ServiceWorkerContentSettingsProxyImpl::RequestFileSystemAccessSync(
+    RequestFileSystemAccessSyncCallback callback) { ... 
+mojo::ReportBadMessage(
+      "The FileSystem API is not exposed to service workers "
+      "but somehow a service worker requested access.");
+ } 
+ >>> 
+ ... } ...  
+```
 ### patch
-_ChromiumImpl
-```
-
-**Результат**:
-
 ```cpp
-std::unique_ptr<VerifiedContents> VerifiedContents::CreateFromFile(
-    base::span<const uint8_t> public_key,
-    const base::FilePath& path) {
-  std::string contents;
-  if (!base::ReadFileToString(path, &contents))
-    return nullptr;
-  return Create(public_key, contents);
-}
-_ChromiumImpl
-```
-
-### Тест 4: Замена и вставка с использованием `..^`
-
-**Исходный код**:
-
-```cpp
-class BraveSearchTest : public InProcessBrowserTest {
- public:
-  BraveSearchTest() = default;
-
-  void SetUpOnMainThread() override {
-    InProcessBrowserTest::SetUpOnMainThread();
-    mock_cert_verifier_.mock_cert_verifier()->set_default_result(net::OK);
-    host_resolver()->AddRule("*", "127.0.0.1");
-
-    https_server_ = std::make_unique<net::EmbeddedTestServer>(
-        net::test_server::EmbeddedTestServer::TYPE_HTTPS);
-    https_server_->RegisterRequestHandler(base::BindRepeating(
-        &BraveSearchTest::HandleRequest, base::Unretained(this)));
-
-    base::FilePath test_data_dir;
-    base::PathService::Get(brave::DIR_TEST_DATA, &test_data_dir);
-    test_data_dir = test_data_dir.AppendASCII(kEmbeddedTestServerDirectory);
-    https_server_->ServeFilesFromDirectory(test_data_dir);
-
-    ASSERT_TRUE(https_server_->Start());
-    GURL url = https_server()->GetURL("google.com", "/search");
-    brave_search::BraveSearchFallbackHost::SetBackupProviderForTest(url);
-
-    // Force default search engine to Google
-    // Some tests will fail if Brave is default
-    auto* template_url_service =
-        TemplateURLServiceFactory::GetForProfile(browser()->profile());
-    TemplateURL* google = template_url_service->GetTemplateURLForKeyword(u":g");
-    template_url_service->SetUserSelectedDefaultSearchProvider(google);
+void ServiceWorkerContentSettingsProxyImpl::GetBraveShieldsSettings(
+    GetBraveShieldsSettingsCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  // May be shutting down.
+  if (!context_wrapper_->browser_context()) {
+    std::move(callback).Run(brave_shields::mojom::ShieldsSettings::New());
+    return;
   }
-};
+  // Shields should also work in opaque origins.
+  const GURL url = origin_.GetTupleOrPrecursorTupleIfOpaque().GetURL();
+  std::move(callback).Run(
+      GetContentClient()->browser()->WorkerGetBraveShieldSettings(
+          url, context_wrapper_->browser_context()));
+}
+
 ```
+```
+
+---
+
+### Пример 4: Вставка метода внутри вложенных namespace (`content/browser/devtools/protocol/network_handler.cc`)
+
+Проходит через два вложенных namespace (`content` → `protocol`) и вставляет `RequestAdblockInfoReceived` после закрывающей скобки `ConfigureDurableMessages`.
 
 **Инструкция**:
-
 ```markdown
-### match:
-...
-class ..^ {...>>>};...
-### patch
-print("[INFO]: ")
-```
-
-**Результат**:
-
+### match
 ```cpp
-class BraveSearchTest : public InProcessBrowserTest {
- public:
-  BraveSearchTest() = default;
-
-  void SetUpOnMainThread() override {
-    InProcessBrowserTest::SetUpOnMainThread();
-    mock_cert_verifier_.mock_cert_verifier()->set_default_result(net::OK);
-    host_resolver()->AddRule("*", "127.0.0.1");
-
-    https_server_ = std::make_unique<net::EmbeddedTestServer>(
-        net::test_server::EmbeddedTestServer::TYPE_HTTPS);
-    https_server_->RegisterRequestHandler(base::BindRepeating(
-        &BraveSearchTest::HandleRequest, base::Unretained(this)));
-
-    base::FilePath test_data_dir;
-    base::PathService::Get(brave::DIR_TEST_DATA, &test_data_dir);
-    test_data_dir = test_data_dir.AppendASCII(kEmbeddedTestServerDirectory);
-    https_server_->ServeFilesFromDirectory(test_data_dir);
-
-    ASSERT_TRUE(https_server_->Start());
-    GURL url = https_server()->GetURL("google.com", "/search");
-    brave_search::BraveSearchFallbackHost::SetBackupProviderForTest(url);
-
-    // Force default search engine to Google
-    // Some tests will fail if Brave is default
-    auto* template_url_service =
-        TemplateURLServiceFactory::GetForProfile(browser()->profile());
-    TemplateURL* google = template_url_service->GetTemplateURLForKeyword(u":g");
-    template_url_service->SetUserSelectedDefaultSearchProvider(google);
+...
+ 
+ namespace content { ... 
+ 
+ namespace protocol { ... 
+ 
+ void NetworkHandler::ConfigureDurableMessages(
+    std::optional<int> max_total_size,
+    std::optional<int> max_resource_size,
+    std::unique_ptr<ConfigureDurableMessagesCallback> callback) { ... 
+MaybeEnableDurableMessages(base::BindOnce(
+      &ConfigureDurableMessagesCallback::sendSuccess, std::move(callback)));
+ } 
+ >>> 
+ ... } ...  } ...  
+```
+### patch
+```cpp
+void NetworkHandler::RequestAdblockInfoReceived(
+    const std::string& request_id,
+    std::unique_ptr<protocol::Network::AdblockInfo> info) {
+  if (!enabled_) {
+    return;
   }
-print("[INFO]: ")
-};
+  frontend_->RequestAdblockInfoReceived(request_id, std::move(info));
+}
+
+```
 ```
 
 ## Архитектура и структура репозитория
@@ -336,19 +274,23 @@ print("[INFO]: ")
 
 | Файл/Директория | Описание |
 | --- | --- |
-| `unique3.cpp`, `unique5.cpp`, ... | Исходные файлы C++ для тестирования |
-| `unique3.md`, `unique5.md`, ... | Файлы Markdown с инструкциями и патчами для тестирования |
-| `test/PassedTests/` | Тестовые файлы (C++ и Markdown) для успешных сценариев |
-| `test/FailedTests/` | Тестовые файлы для сценариев с ошибками |
+| `Hatch.py` | Главная точка входа CLI с командами `apply` и `generate` |
 | `constants.py` | Константы, такие как операторы Hatch, поддерживаемые языки и расширения |
 | `Insert.py` | Логика для вставки и замены патчей в исходном коде |
-| `MainCMD.py` | Точка входа для интерфейса командной строки |
-| `MainTest.py` | Модуль для автоматизированного тестирования |
 | `SearchCode.py` | Логика для поиска позиций вставки в коде |
 | `TokenizeCode.py` | Токенизация кода с поддержкой операторов Hatch |
 | `Utilities.py` | Вспомогательные функции для чтения/записи файлов и парсинга Markdown |
-| `CodeComprasion.py ` |Будущая логика создание Mаtch относительно измененного кода |
+| `Logging.py` | Система цветного логирования с поддержкой усечения вывода |
+| `getChange.py` | Логика определения изменений между двумя версиями файла |
+| `gitUtils.py` | Git-утилиты: чтение коммитов из веток, вычисление diff |
+| `CompressionVersion.py` | Генерирует инструкции Hatch match/patch из различий между файлами |
+| `CompressionInput.py` | Создаёт файлы Markdown с инструкциями из пар match/patch |
+| `CompressionConstants/` | Per-language константы для движка генерации инструкций |
+| `MainTest.py` | Модуль для автоматизированного тестирования |
+| `pyproject.toml` | Конфигурация пакета и зависимости |
+| `test/PassedTests/` | Тестовые файлы (C++ и Markdown) для успешных сценариев |
+| `test/FailedTests/` | Тестовые файлы для сценариев с ошибками |
 
 ## Заключение
 
-Hatch — это экспериментальный инструмент для управления патчами Git с использованием логического языка Hatch, упрощающий и структурирующий процесс модификации кода. Инструмент находится в активной разработке, и мы приветствуем любые предложения и вклад в проект через GitHub.
+Hatch — это экспериментальный инструмент для управления патчами Git с использованием логического языка Hatch, упрощающий и структурирующий процесс модификации кода. Инструмент находится в активной разработке, и мы приветствуем любые предложения и вклад в проект через [GitHub](https://github.com/Danil-Varakin/Hatch).
