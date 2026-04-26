@@ -412,7 +412,6 @@ def AddInstruction(FilePath: str, language: str, SourceCode: str, NewSourceCode:
             if not Change:
                 raise ValueError("Changes no found")
 
-            print(SourceCode[Change["start"]:Change["end"]+1])
             tree = GetASTTree(SourceCode, language)
             StartPoint, EndPoint = GetChangeStartEndPoint(SourceCode, Change)
             NodesWithChange = SearchNodesWithChange(StartPoint, EndPoint, tree)
@@ -616,13 +615,17 @@ def BracketToNodeTypes(node: Any, typesSet: Dict[str, str]) -> Optional[str]:
 
 @log_function(args=False, result=False)
 def GetParentText (CurrentNode, MatchList, MatchListIndex, SourceCode, ParentBracketType):
+    ParentText = f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}"
     if MatchList[MatchListIndex + 1][1] == "ChangeNodePrevContext":
         NodeText = MatchList[MatchListIndex + 1][0]
+        IsNodeInParentHead = NodeText in ParentText
     else:
         node = MatchList[MatchListIndex + 1][0]
         NodeText = GetNodeText(node, SourceCode)
-    ParentText = f"\n {GetNodeText(CurrentNode, SourceCode).split(ParentBracketType)[0].strip()}"
-    if NodeText in ParentText:
+        ParentEndByte = len(ParentText.encode('utf-8')) + CurrentNode.start_byte
+        IsNodeInParentHead = ParentEndByte > node.start_byte
+
+    if IsNodeInParentHead:
         for bracket in OPEN_NESTING_MARKERS:
             ParentText = f"\n {GetNodeText(CurrentNode, SourceCode).split(bracket)[0].strip()}"
             if NodeText not in ParentText:
