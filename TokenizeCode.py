@@ -28,11 +28,11 @@ def TokenizeCode(CodeString: str, Language: str):
 def FindSpecialOperatorIndexes(CodeString: str,  language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     CommentsList = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
-
     StringsPattern =  STRING_PATTERNS[language.lower()]
     StringsList = [(m.start(), m.end()) for m in re.finditer(StringsPattern, CodeString, re.DOTALL | re.MULTILINE)]
 
-    FilteredCommentsList = [interval for interval in CommentsList if not any(IntervalsIntersect(interval, other) for other in StringsList)]
+    FilteredStringsList = sorted([interval for interval in StringsList if not any(IntervalsIntersect(interval, other) for other in CommentsList)])
+    FilteredCommentsList = sorted([interval for interval in CommentsList if not any(IntervalsIntersect(interval, other) for other in FilteredStringsList)])
 
     ReMatches = re.finditer(SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, CodeString)
     OperatorIndexesList = []
@@ -40,44 +40,17 @@ def FindSpecialOperatorIndexes(CodeString: str,  language: str):
         ReOperatorStart = ReMatch.start()
         if not any(start <= ReOperatorStart < end for start, end in FilteredCommentsList):
             OperatorIndexesList.append(ReOperatorStart)
-    IsSpecialOperatorsInCommentsList, SpecialOperatorIndexesList = IsSpecialOperatorsInComments(CodeString, FilteredCommentsList)
-    return OperatorIndexesList, IsSpecialOperatorsInCommentsList, FilteredCommentsList, SpecialOperatorIndexesList
+    return OperatorIndexesList
 
-@log_function(args=False, result=False)
-def IsSpecialOperatorsInComments(CodeString, CommentsList):
-    ReSpecialOperators = re.finditer(SPECIAL_OPERATORS_PATTERN, CodeString)
-    result = []
-    SpecialOperatorIndexesList = []
-    for match in ReSpecialOperators:
-        OperatorStart = match.start()
-        IsInComment = False
-        for start, end in CommentsList:
-            if start <= OperatorStart < end:
-                IsInComment = True
-                break
-        result.append((OperatorStart, IsInComment))
-        SpecialOperatorIndexesList.append(OperatorStart)
-        SpecialOperatorIndexesList = sorted(SpecialOperatorIndexesList)
-    return sorted(result, key=lambda x: x[0]), SpecialOperatorIndexesList
+
 
 
 @log_function(args=False, result=False)
-def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list, IsSpecialOperatorsInCommentsList: list, CommentsList: list, SpecialOperatorIndexesList: list):
+def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list):
     TokensList = []
     PositionInCodeString = 0
-    OperatorIndexesList = sorted(set(OperatorIndexesList + SpecialOperatorIndexesList))
+    OperatorIndexesList = sorted(set(OperatorIndexesList))
     for i in OperatorIndexesList + [len(CodeString)]:
-        SkipFlag = False
-        if IsSpecialOperatorsInCommentsList:
-            for idx, (CommentStart, CommentEnd) in enumerate(CommentsList):
-                if CommentStart < i < CommentEnd:
-                    if CodeString[i] not in NESTING_MARKERS:
-                        break
-                    else:
-                        SkipFlag = True
-                    break
-        if SkipFlag:
-            continue
         Token = CodeString[PositionInCodeString:i]
         if i > PositionInCodeString:
             Token = TokenizeCode(Token, language.lower())
@@ -106,11 +79,8 @@ def CheckAndRunTokenize(CodeString: str, language: str):
     try:
         if language in TAB_DEPENDENT_LANGUAGES:
             raise ValueError("Tab dependent language are not being processed yet")
-        OperatorIndexesList, IsSpecialOperatorsInCommentsList, CommentsList, SpecialOperatorIndexesList = FindSpecialOperatorIndexes(CodeString, language)
-        if not OperatorIndexesList:
-            return TokenizeCode(CodeString, language)
-        else:
-            return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList, IsSpecialOperatorsInCommentsList, CommentsList, SpecialOperatorIndexesList)
+        OperatorIndexesList  = FindSpecialOperatorIndexes(CodeString, language)
+        return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList)
     except ValueError as e:
         logger.error(f"Logic error: {e}")
         return 0
