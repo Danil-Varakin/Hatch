@@ -1,7 +1,7 @@
 import argparse
 import sys
 from Utilities import ReceivingMatchOrPatchOrSourceCodeFromList, DetectProgrammingLanguage, ComparingListsLength, InsertOperatorStatus, WriteFile
-from TokenizeCode import CheckAndRunTokenize
+from TokenizeCode import RunTokenize
 from Insert import RunInsert
 from Logging import setup_logger, log_function
 from CompressionVersion import RunAddInstruction
@@ -34,10 +34,10 @@ def ProcessApplyMode(match_path, in_path, out_path, patch_path=None, language=No
         if ComparingListsLength(matches, patches):
             for i, (match, patch) in enumerate(zip(matches, patches)):
                 SourceCode = ReceivingMatchOrPatchOrSourceCodeFromList(out_path, "SourceCode")
-                SourceCode = CheckAndRunTokenize(SourceCode, language)
+                SourceCode = RunTokenize(SourceCode, language)
                 if not SourceCode:
                     break
-                match = CheckAndRunTokenize(match, language)
+                match = RunTokenize(match, language)
                 IsOnlyOneInsert = InsertOperatorStatus(match)
 
                 if IsOnlyOneInsert == 1:

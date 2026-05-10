@@ -5,7 +5,7 @@ from Insert import RunInsert
 from tree_sitter import Point
 
 from SearchCode import CheckMatchNestingMarkerPairs
-from TokenizeCode import CheckAndRunTokenize
+from TokenizeCode import RunTokenize
 from Logging import setup_logger, log_function
 from tree_sitter_language_pack import get_parser
 from Utilities import ReadFile, LoadLanguageModule, InsertOperatorStatus, GetTokenIndexBeforePosition, \
@@ -358,7 +358,7 @@ def AddMatchContext(OriginalSourceCode: str, SourceCode: str, Match: list[str], 
 def GetChangeNodePrevContext(SourceCode, ParentNode, NodeInsideParentNode, language):
     FirstNodeParentText = GetNodeText(ParentNode, SourceCode)
     NodeStartInParentWithoutWhitespace, _ = GetNodePositionsInParentWithoutWhitespace(NodeInsideParentNode, ParentNode, SourceCode)
-    FirstNodeParentTokenList = CheckAndRunTokenize(FirstNodeParentText, language)
+    FirstNodeParentTokenList = RunTokenize(FirstNodeParentText, language)
     FirstNodeTokenIndex = GetTokenIndexBeforePosition(NodeStartInParentWithoutWhitespace, FirstNodeParentTokenList)
     IsNestingMarkerPairsDictionary = CheckMatchNestingMarkerPairs(FirstNodeParentTokenList[:FirstNodeTokenIndex + 1])
     NotPairedNestingMarkerIndex = -1
@@ -485,8 +485,8 @@ def UpdatingSourceCode(Patch: str, Match: str, SourceCode: str, Language: str, N
             temp_file.write(SourceCode)
             temp_file.seek(0)
             TempFilePath = temp_file.name
-            SourceCode = CheckAndRunTokenize(SourceCode, Language)
-            Match = CheckAndRunTokenize(Match, Language)
+            SourceCode = RunTokenize(SourceCode, Language)
+            Match = RunTokenize(Match, Language)
             IsOnlyOneInsert = InsertOperatorStatus(Match)
             if IsOnlyOneInsert == 1:
                 CompletionStatus, ErrorCode = RunInsert(Match, Patch, SourceCode, TempFilePath, TempFilePath)
@@ -539,9 +539,9 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
             if IsNextExist and NextType in ["ParentNode", 'SiblingNode']  or not NextType:
                 if not IsAddAction:
                     if NextType == "ParentNode":
-                        MatchString += " <<< ... "
+                        MatchString += "\n<<< ... "
                     else:
-                        MatchString += " <<< "
+                        MatchString += "\n<<< "
                 else:
                     MatchString += "\n >>> "
                     if not NextType or  NextType != 'SiblingNode':
@@ -561,13 +561,13 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
 
         if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not IsAddAction:
             if not IsEllipsisTail and NodeType != "SiblingNode":
-                MatchString += f' ... >>> '
+                MatchString += f'\n ... >>> '
             else:
-                MatchString += f"  >>> "
+                MatchString += f"\n>>> "
 
     IsEllipsisTail = MatchString[-3:len(MatchString)] == "..." or MatchString[-4:-1]  == "..."
     if not IsEllipsisTail:
-        MatchString += " ..."
+        MatchString += "\n..."
     MatchString = autoCloseBrackets(MatchString)
     return MatchString
 
