@@ -121,19 +121,19 @@ def ComparingListsLength(matches, patches):
         return False
 
 @log_function(args=False, result=False)
-def FindNthNOperators(string, StartIndex):
+def FindNthNOperators(String, StartIndex):
     result = ""
-    if StartIndex >= len(string):
+    if StartIndex >= len(String):
         return result
     EndIndex = StartIndex
-    if EndIndex < len(string) and string[EndIndex] == '^':
+    if  String[EndIndex] == '^':
         EndIndex += 1
         Numbers = ""
-        while EndIndex < len(string) and string[EndIndex].isdigit():
-            Numbers += string[EndIndex]
+        while EndIndex < len(String) and String[EndIndex].isdigit():
+            Numbers += String[EndIndex]
             EndIndex += 1
-        if EndIndex < len(string) and string[EndIndex:EndIndex + 2] == '..' and Numbers:
-            result = string[StartIndex: EndIndex + 2]
+        if EndIndex < len(String) and String[EndIndex:EndIndex + 2] == '..' and Numbers:
+            result = String[StartIndex: EndIndex + 2]
     return result
 
 @log_function(args=False, result=False)
@@ -150,9 +150,9 @@ def InsertOperatorStatus(MatchTokenList):
             return 2
     return 0
 
-def AddingTabs(string, CodeNestingLevel):
-    if '\n' in string:
-        patch_lines = string.split('\n')
+def AddingTabs(String, CodeNestingLevel):
+    if '\n' in String:
+        patch_lines = String.split('\n')
         indented_lines = []
         IsFirstLine = True
         for line in patch_lines:
@@ -161,10 +161,10 @@ def AddingTabs(string, CodeNestingLevel):
             else:
                 indented_lines.append(line)
             IsFirstLine = False
-        string = '\n'.join(indented_lines)
-        if string[len(string) - 1] == "\n":
-            string = string + '\t' * CodeNestingLevel
-    return string
+        String = '\n'.join(indented_lines)
+        if String[len(String) - 1] == "\n":
+            String = String + '\t' * CodeNestingLevel
+    return String
 
 @log_function(args=False, result=False)
 def GetFileOldAndNewVersion(FilePath):
@@ -223,11 +223,14 @@ def TokenIndexToStringIndex(TargetTokenIndex, SourceCode, TokenList):
 
     return pos+1
 
-def IntervalsIntersect(a, b):
-    return a[0] <= b[1] and b[0] <= a[1]
-
 @log_function(args=False, result=False)
 def LetterSequence():
     for length in itertools.count(1):
         for combo in itertools.product(string.ascii_lowercase, repeat=length):
             yield ''.join(combo)
+            
+@log_function(args=False, result=False)
+def CheckBalancedMarkers(CodeString):
+    return (CodeString.count('{') == CodeString.count('}') and
+            CodeString.count('(') == CodeString.count(')') and
+            CodeString.count('[') == CodeString.count(']'))

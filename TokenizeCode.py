@@ -1,6 +1,6 @@
 import re
-from constants import SPECIAL_OPERATORS, TAB_DEPENDENT_LANGUAGES, NESTING_MARKERS, SPECIAL_OPERATORS_PATTERN, SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, COMMENT_PATTERN, STRING_PATTERNS
-from Utilities import FindNthNOperators, IntervalsIntersect
+from constants import TAB_DEPENDENT_LANGUAGES, NESTING_MARKERS, SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, COMMENT_PATTERN, STRING_PATTERNS, CLOSE_TO_OPEN_NESTING_MARKERS
+from Utilities import CheckBalancedMarkers
 from Logging import setup_logger, log_function
 
 logger = setup_logger()
@@ -25,61 +25,72 @@ def TokenizeCode(CodeString: str, Language: str):
     return TokensList
 
 @log_function(args=False, result=False)
-def FindSpecialOperatorIndexes(CodeString: str,  language: str):
+def FindFilteredCommentRanges(CodeString: str, language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
-    CommentsList = [(m.start(), m.end()) for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE)]
-    StringsPattern =  STRING_PATTERNS[language.lower()]
-    StringsList = [(m.start(), m.end()) for m in re.finditer(StringsPattern, CodeString, re.DOTALL | re.MULTILINE)]
+    StringsPattern = STRING_PATTERNS[language.lower()]
 
-    FilteredStringsList = sorted([interval for interval in StringsList if not any(IntervalsIntersect(interval, other) for other in CommentsList)])
-    FilteredCommentsList = sorted([interval for interval in CommentsList if not any(IntervalsIntersect(interval, other) for other in FilteredStringsList)])
+    StringRanges = [(m.start(), m.end()) for m in re.finditer(StringsPattern, CodeString, re.DOTALL | re.MULTILINE)]
 
-    ReMatches = re.finditer(SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, CodeString)
+    FilteredCommentsList = []
+    for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE):
+        if not any(m.start() < StringEnd and StringStart < m.end() for StringStart, StringEnd in StringRanges):
+            FilteredCommentsList.append((m.start(), m.end()))
+    return FilteredCommentsList
+
+@log_function(args=False, result=False)
+def FindSpecialOperatorIndexes(CodeString: str, language: str, IsBalancedMarkers):
+    FilteredCommentsList = FindFilteredCommentRanges(CodeString, language)
     OperatorIndexesList = []
-    for ReMatch in ReMatches:
-        ReOperatorStart = ReMatch.start()
-        if not any(start <= ReOperatorStart < end for start, end in FilteredCommentsList):
-            OperatorIndexesList.append(ReOperatorStart)
-    return OperatorIndexesList
+    stack = []
+    for m in re.finditer(SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, CodeString):
 
+        if any(CommentStart <=  m.start() < CommentEnd for CommentStart, CommentEnd in FilteredCommentsList):
+            continue
 
+        OperatorIndexesList.append(( m.start(), m.end()))
+        if IsBalancedMarkers:
+            if m.end() -  m.start() == 1:
+                char = CodeString[ m.start()]
+                if char in '{([':
+                    stack.append(char)
+                elif char in '})]':
+                    if not stack or stack.pop() != CLOSE_TO_OPEN_NESTING_MARKERS[char]:
+                        return None
 
+    return OperatorIndexesList if not stack else None
 
 @log_function(args=False, result=False)
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list):
     TokensList = []
     PositionInCodeString = 0
-    OperatorIndexesList = sorted(set(OperatorIndexesList))
-    for i in OperatorIndexesList + [len(CodeString)]:
-        Token = CodeString[PositionInCodeString:i]
-        if i > PositionInCodeString:
-            Token = TokenizeCode(Token, language.lower())
+    for OperatorStart, OperatorEnd in OperatorIndexesList + [(len(CodeString), len(CodeString))]:
+        if OperatorStart > PositionInCodeString:
+            Token = TokenizeCode(CodeString[PositionInCodeString:OperatorStart], language.lower())
             if len(Token) > 0:
                 TokensList.extend(Token)
 
-        if i < len(CodeString):
-            NthNOperator = FindNthNOperators(CodeString, i)
-            if NthNOperator:
-                TokensList.append(NthNOperator)
-                PositionInCodeString = i + len(NthNOperator)
-            elif CodeString[i:i + 3] in SPECIAL_OPERATORS:
-                TokensList.append(CodeString[i:i + 3])
-                PositionInCodeString = i + 3
-            elif CodeString[i] in NESTING_MARKERS:
-                TokensList.append(CodeString[i])
-                PositionInCodeString = i + 1
+        if OperatorStart < len(CodeString):
+            if CodeString[OperatorStart] in NESTING_MARKERS:
+                TokensList.append(CodeString[OperatorStart])
+                PositionInCodeString = OperatorEnd
             else:
-                TokensList.append(CodeString[i])
-                PositionInCodeString = i + 1
+                TokensList.append(CodeString[OperatorStart:OperatorEnd])
+                PositionInCodeString = OperatorEnd
     return TokensList
 
 
 @log_function(args=False, result=False)
-def CheckAndRunTokenize(CodeString: str, language: str):
+def RunTokenize(CodeString: str, language: str):
     try:
         if language in TAB_DEPENDENT_LANGUAGES:
             raise ValueError("Tab dependent language are not being processed yet")
-        OperatorIndexesList  = FindSpecialOperatorIndexes(CodeString, language)
+
+        IsBalancedMarkers = CheckBalancedMarkers(CodeString)
+        if not IsBalancedMarkers:
+            logger.warning("The number of nesting markers does not match. When manually correcting, try not to use nesting markers")
+        OperatorIndexesList  = FindSpecialOperatorIndexes(CodeString, language, IsBalancedMarkers)
+        if OperatorIndexesList is None:
+            raise ValueError("Error in tokenization of nesting markers")
         return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList)
     except ValueError as e:
         logger.error(f"Logic error: {e}")
