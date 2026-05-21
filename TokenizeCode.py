@@ -25,39 +25,29 @@ def TokenizeCode(CodeString: str, Language: str):
     return TokensList
 
 @log_function(args=False, result=False)
-def FindFilteredCommentRanges(CodeString: str, language: str):
+def FindSpecialOperatorIndexes(CodeString: str, language: str):
     CommentPattern = COMMENT_PATTERN[language.lower()]
     StringsPattern = STRING_PATTERNS[language.lower()]
 
     StringRanges = [(m.start(), m.end()) for m in re.finditer(StringsPattern, CodeString, re.DOTALL | re.MULTILINE)]
-
     FilteredCommentsList = []
+    Offset = 0
+    CodeStringWithoutComments = CodeString
     for m in re.finditer(CommentPattern, CodeString, re.DOTALL | re.MULTILINE):
         if not any(m.start() < StringEnd and StringStart < m.end() for StringStart, StringEnd in StringRanges):
             FilteredCommentsList.append((m.start(), m.end()))
-    return FilteredCommentsList
+            Start, End = m.start() - Offset, m.end() - Offset
+            CodeStringWithoutComments = CodeStringWithoutComments[:Start] + CodeStringWithoutComments[End:]
+            Offset += m.end() - m.start()
+    IsBalancedMarkers = CheckBalancedMarkers(CodeStringWithoutComments)
 
-@log_function(args=False, result=False)
-def FindSpecialOperatorIndexes(CodeString: str, language: str, IsBalancedMarkers):
-    FilteredCommentsList = FindFilteredCommentRanges(CodeString, language)
     OperatorIndexesList = []
-    stack = []
     for m in re.finditer(SPECIAL_OPERATORS_AND_NESTING_MARKERS_PATTERN, CodeString):
-
         if any(CommentStart <=  m.start() < CommentEnd for CommentStart, CommentEnd in FilteredCommentsList):
             continue
-
         OperatorIndexesList.append(( m.start(), m.end()))
-        if IsBalancedMarkers:
-            if m.end() -  m.start() == 1:
-                char = CodeString[ m.start()]
-                if char in '{([':
-                    stack.append(char)
-                elif char in '})]':
-                    if not stack or stack.pop() != CLOSE_TO_OPEN_NESTING_MARKERS[char]:
-                        return None
 
-    return OperatorIndexesList if not stack else None
+    return OperatorIndexesList, IsBalancedMarkers
 
 @log_function(args=False, result=False)
 def TokenizeWithSpecialOperators(CodeString: str, language: str, OperatorIndexesList: list):
@@ -85,12 +75,10 @@ def RunTokenize(CodeString: str, language: str):
         if language in TAB_DEPENDENT_LANGUAGES:
             raise ValueError("Tab dependent language are not being processed yet")
 
-        IsBalancedMarkers = CheckBalancedMarkers(CodeString)
+        OperatorIndexesList, IsBalancedMarkers  = FindSpecialOperatorIndexes(CodeString, language)
         if not IsBalancedMarkers:
-            logger.warning("The number of nesting markers does not match. When manually correcting, try not to use nesting markers")
-        OperatorIndexesList  = FindSpecialOperatorIndexes(CodeString, language, IsBalancedMarkers)
-        if OperatorIndexesList is None:
-            raise ValueError("Error in tokenization of nesting markers")
+            logger.warning("The number of nesting markers does not match or error in tokenization of nesting markers. "
+                           "When manually correcting, try not to use nesting markers.")
         return TokenizeWithSpecialOperators(CodeString, language, OperatorIndexesList)
     except ValueError as e:
         logger.error(f"Logic error: {e}")
