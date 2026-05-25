@@ -2,20 +2,39 @@ import os
 import tempfile
 from CompressionInput import HandleMatchConflict, AgreeEachMatchCommand
 from Insert import RunInsert
-from tree_sitter import Point
-
+from tree_sitter import Point, Parser, Language
+import importlib
 from SearchCode import CheckMatchNestingMarkerPairs
 from TokenizeCode import RunTokenize
 from Logging import setup_logger, log_function
-from tree_sitter_language_pack import get_parser
-from Utilities import ReadFile, LoadLanguageModule, InsertOperatorStatus, GetTokenIndexBeforePosition, \
-    TokenIndexToStringIndex
+from Utilities import ReadFile, LoadLanguageModule, InsertOperatorStatus, GetTokenIndexBeforePosition, TokenIndexToStringIndex, IsComment
 from typing import Any, Optional, Dict, Union
-from constants import OPEN_NESTING_MARKERS, OPEN_TO_CLOSE_NESTING_MARKERS, CLOSE_NESTING_MARKERS, CLOSE_TO_OPEN_NESTING_MARKERS
+from constants import OPEN_NESTING_MARKERS, OPEN_TO_CLOSE_NESTING_MARKERS, CLOSE_NESTING_MARKERS, CLOSE_TO_OPEN_NESTING_MARKERS, LANGUAGE_MAP, MAX_NUMBER_OF_LINES_IN_SIBLINGS
 from gitUtils import GetDiffOutput, ReadLastGitCommit
 from getChange import CompareFilesFromPoint, UpdateChange, GetChange, GetChangeIndexes
 
 logger = setup_logger()
+
+@log_function(args=False, result=False)
+def GetParser(lang_name: str) -> Parser:
+    pkg_name = LANGUAGE_MAP.get(lang_name.lower())
+    if not pkg_name:
+        raise ValueError(f"Неизвестный язык: '{lang_name}'. Доступные: {list(LANGUAGE_MAP.keys())}")
+    try:
+        module = importlib.import_module(pkg_name)
+    except ImportError:
+        raise ImportError(f"Пакет не установлен. Установи: pip install {pkg_name.replace('_', '-')}")
+    return Parser(Language(module.language()))
+
+@log_function(args=False, result=False)
+def GetASTTree(CodeString: str, language):
+    try:
+        parser = GetParser(language)
+        tree = parser.parse(CodeString.encode('utf-8'))
+        return tree
+    except Exception as e:
+        logger.error(f"Logic error: {str(e)}")
+        return None
 
 @log_function(args=False, result=False)
 def SearchNodesWithChange(StartPoint: Any, EndPoint: Any, tree: Any) -> list[Any]:
@@ -219,16 +238,6 @@ def GetNodesBetween(node1: Any, node2: Any, lca: Any) -> list[Any]:
         return []
 
 @log_function(args=False, result=False)
-def GetASTTree(CodeString: str, language):
-    try:
-        parser = get_parser(language)
-        tree = parser.parse(CodeString.encode('utf-8'))
-        return tree
-    except Exception as e:
-        logger.error(f"Logic error: {str(e)}")
-        return None
-
-@log_function(args=False, result=False)
 def FindSiblingNodes(Nodes: list[Any], IsInsertInBegin: bool, language: str) -> Union[Dict[str, Optional[Any]], int]:
     try:
         if not Nodes:
@@ -238,8 +247,8 @@ def FindSiblingNodes(Nodes: list[Any], IsInsertInBegin: bool, language: str) -> 
         PrevForFirst = FistNode.prev_sibling
         NextForLast = LastNode.next_sibling
         FilteredSiblingsDict = {
-            'PrevForFirst': PrevForFirst if IsIndependentNode(PrevForFirst, language) and not IsInsertInBegin and  PrevForFirst.is_named else None,
-            'NextForLast': NextForLast if IsIndependentNode(NextForLast, language) and not IsInsertInBegin and  NextForLast.is_named else None}
+            'PrevForFirst': PrevForFirst if IsIndependentNode(PrevForFirst, language) and not IsInsertInBegin and  PrevForFirst.is_named and IsComment(PrevForFirst, language) else None,
+            'NextForLast': NextForLast if IsIndependentNode(NextForLast, language) and not IsInsertInBegin and  NextForLast.is_named and IsComment(NextForLast, language) else None}
         return FilteredSiblingsDict
     except Exception as e:
         logger.error(f"Logic error: {str(e)}")
@@ -524,6 +533,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
         NextNode, NextType = 0, 0
         if i + 1 < len(MatchList):
             NextNode, NextType = MatchList[i + 1]
+        IsNextNodeWithChange = bool(NextNode and NextType == "NodeWithChange")
 
         if NodeType == 'ParentNode':
             ParentBracketType = BracketToNodeTypes(node, LanguageModule.BRACKET_TO_NODE_TYPES)
@@ -550,8 +560,8 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
         elif NodeType == 'SiblingNode':
             if not IsEllipsisTail and i > 0 and MatchList[i-1][1] != "NodeWithChange":
                 MatchString += " \n... "
-            MatchString += f"\n{GetNodeText(node, SourceCode)}"
-            if NextNode and not NextType == "NodeWithChange" or not NextNode:
+            MatchString += f"\n{TruncateSiblingByLimit(GetNodeText(node, SourceCode), IsNextNodeWithChange)}"
+            if not IsNextNodeWithChange or not NextNode:
                 MatchString +=  "\n ... "
 
         elif NodeType == 'ChangeNodePrevContext':
@@ -559,7 +569,7 @@ def GenerateMatch(NodesWithChanges, siblings, NearestStructs, SourceCode, action
                 MatchString += " \n... "
             MatchString += f"\n{node}"
 
-        if NextNode and NextType == "NodeWithChange" and NodeType != "NodeWithChange" and not IsAddAction:
+        if IsNextNodeWithChange and NodeType != "NodeWithChange" and not IsAddAction:
             if not IsEllipsisTail and NodeType != "SiblingNode":
                 MatchString += f'\n ... >>> '
             else:
@@ -747,3 +757,17 @@ def autoCloseBrackets(MatchString):
             MatchString += OPEN_TO_CLOSE_NESTING_MARKERS[NestingMarker] + " ...  "
     return MatchString
 
+def TruncateSiblingByLimit(SiblingText:str, IsNextNodeWithChange:bool):
+    CutSiblingText = ""
+    SiblingTextLines = SiblingText.split("\n")
+    if len(SiblingTextLines) > MAX_NUMBER_OF_LINES_IN_SIBLINGS:
+        if IsNextNodeWithChange:
+            for line in  SiblingTextLines[-MAX_NUMBER_OF_LINES_IN_SIBLINGS:]:
+                CutSiblingText += line
+        else:
+            for line in SiblingTextLines[0:MAX_NUMBER_OF_LINES_IN_SIBLINGS]:
+                CutSiblingText += line
+                
+        return CutSiblingText
+    
+    return SiblingText

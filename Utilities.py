@@ -5,7 +5,7 @@ import subprocess
 import itertools
 import string
 from typing import Literal
-from constants import EXTENSIONS_FILE
+from constants import EXTENSIONS_FILE, COMMENT_NODES
 from Logging import setup_logger, log_function
 
 logger = setup_logger()
@@ -234,3 +234,7 @@ def CheckBalancedMarkers(CodeString):
     return (CodeString.count('{') == CodeString.count('}') and
             CodeString.count('(') == CodeString.count(')') and
             CodeString.count('[') == CodeString.count(']'))
+
+@log_function(args=False, result=False)
+def IsComment(node, language: str) -> bool:
+    return node.type in COMMENT_NODES.get(language, set())
