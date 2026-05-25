@@ -220,7 +220,7 @@ class BraveSearchTestEnabled : public BraveSearchTest {
   BraveSearchTestEnabled() {
     feature_list_.InitAndEnableFeatureWithParameters(
         brave_search::features::kBraveSearchDefaultAPIFeature,
-        {{brave_search::features::kBraveSearchDefaultAPIDailyLimitName2, "3"},
+        {{brave_search::features::kBraveSearchDefaultAPIDailyLimitName, "3"},
          {brave_search::features::kBraveSearchDefaultAPITotalLimitName, "10"}});
   }
 };

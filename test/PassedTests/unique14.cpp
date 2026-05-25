@@ -1,148 +1,164 @@
-/* Copyright (c) 2020 The Brave Authors. All rights reserved.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+// Copyright 2012 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "chrome/browser/ui/views/bookmarks/bookmark_context_menu.h"
 
 #include <memory>
 
-#include "base/path_service.h"
-#include "base/test/thread_test_helper.h"
-#include "brave/browser/extensions/brave_base_local_data_files_browsertest.h"
-#include "brave/components/brave_component_updater/browser/local_data_files_service.h"
-#include "brave/components/brave_shields/content/browser/brave_shields_util.h"
-#include "brave/components/brave_shields/core/common/features.h"
-#include "brave/components/constants/brave_paths.h"
-#include "brave/components/constants/pref_names.h"
-#include "brave/components/webcompat/core/common/features.h"
-#include "chrome/browser/content_settings/host_content_settings_map_factory.h"
-#include "chrome/browser/extensions/extension_browsertest.h"
-#include "chrome/browser/profiles/profile.h"
-#include "chrome/browser/ui/browser.h"
-#include "chrome/test/base/in_process_browser_test.h"
-#include "chrome/test/base/ui_test_utils.h"
-#include "components/network_session_configurator/common/network_switches.h"
-#include "components/permissions/permission_request.h"
-#include "components/prefs/pref_service.h"
-#include "content/public/browser/render_frame_host.h"
-#include "content/public/test/browser_test.h"
-#include "content/public/test/browser_test_utils.h"
-#include "net/dns/mock_host_resolver.h"
-#include "third_party/blink/public/common/device_memory/approximated_device_memory.h"
+#include "base/command_line.h"
+#include "base/i18n/rtl.h"
+#include "base/memory/ptr_util.h"
+#include "base/memory/raw_ptr.h"
+#include "base/no_destructor.h"
+#include "base/strings/utf_string_conversions.h"
+#include "chrome/app/chrome_command_ids.h"
+#include "chrome/common/chrome_switches.h"
+#include "components/bookmarks/browser/bookmark_model.h"
+#include "ui/base/mojom/menu_source_type.mojom-forward.h"
+#include "ui/gfx/native_ui_types.h"
+#include "ui/views/controls/menu/menu_item_view.h"
+#include "ui/views/controls/menu/menu_model_adapter.h"
+#include "ui/views/controls/menu/menu_runner.h"
+#include "ui/views/widget/widget.h"
 
-using brave_shields::ControlType;
+using bookmarks::BookmarkNode;
 
-constexpr char kDeviceMemoryScript[] = "navigator.deviceMemory * 1024";
+namespace {
 
-class BraveDeviceMemoryFarblingBrowserTest : public InProcessBrowserTest {
- public:
-  BraveDeviceMemoryFarblingBrowserTest()
-      : https_server_(net::EmbeddedTestServer::TYPE_HTTPS) {
-    scoped_feature_list_.InitWithFeatures(
-        {
-            brave_shields::features::kBraveShowStrictFingerprintingMode,
-            webcompat::features::kBraveWebcompatExceptionsService,
-        },
-        {});
+base::OnceClosure& PreRunCallback() {
+  static base::NoDestructor<base::OnceClosure> instance;
+  return *instance;
+}
+
+// Returns true if |command_id| corresponds to a command that causes one or more
+// bookmarks to be removed.
+bool IsRemoveBookmarksCommand(int command_id) {
+  return command_id == IDC_CUT || command_id == IDC_BOOKMARK_BAR_REMOVE;
+}
+
+}  // namespace
+
+BookmarkContextMenuObserver::~BookmarkContextMenuObserver() = default;
+
+////////////////////////////////////////////////////////////////////////////////
+// BookmarkContextMenu, public:
+
+BookmarkContextMenu::BookmarkContextMenu(
+    views::Widget* parent_widget,
+    Browser* browser,
+    Profile* profile,
+    BookmarkLaunchLocation opened_from,
+    const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>&
+        selection,
+    bool close_on_remove,
+    bool can_paste)
+    : controller_(new BookmarkContextMenuController(
+          parent_widget ? parent_widget->GetNativeWindow()
+                        : gfx::NativeWindow(),
+          this,
+          browser,
+          profile,
+          opened_from,
+          selection,
+          can_paste)),
+      parent_widget_(parent_widget ? parent_widget->GetWeakPtr() : nullptr),
+      menu_(new views::MenuItemView(this)),
+      close_on_remove_(close_on_remove) {
+  menu_runner_ = std::make_unique<views::MenuRunner>(
+      base::WrapUnique<views::MenuItemView>(menu_),
+      views::MenuRunner::HAS_MNEMONICS | views::MenuRunner::IS_NESTED |
+          views::MenuRunner::MENU_ITEM_CONTEXT_MENU);
+  ui::SimpleMenuModel* menu_model = controller_->menu_model();
+  for (size_t i = 0; i < menu_model->GetItemCount(); ++i) {
+    views::MenuModelAdapter::AppendMenuItemFromModel(
+        menu_model, i, menu_, menu_model->GetCommandIdAt(i));
+  }
+}
+
+BookmarkContextMenu::~BookmarkContextMenu() = default;
+
+void BookmarkContextMenu::InstallPreRunCallback(base::OnceClosure callback) {
+  DCHECK(PreRunCallback().is_null());
+  PreRunCallback() = std::move(callback);
+}
+
+void BookmarkContextMenu::RunMenuAt(const gfx::Point& point,
+                                    ui::mojom::MenuSourceType source_type) {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kKioskMode)) {
+    return;
   }
 
-  BraveDeviceMemoryFarblingBrowserTest(
-      const BraveDeviceMemoryFarblingBrowserTest&) = delete;
-  BraveDeviceMemoryFarblingBrowserTest& operator=(
-      const BraveDeviceMemoryFarblingBrowserTest&) = delete;
-
-  ~BraveDeviceMemoryFarblingBrowserTest() override = default;
-
-  void SetUpOnMainThread() override {
-    InProcessBrowserTest::SetUpOnMainThread();
-    base::FilePath test_data_dir;
-    base::PathService::Get(brave::DIR_TEST_DATA, &test_data_dir);
-    https_server_.SetSSLConfig(net::EmbeddedTestServer::CERT_TEST_NAMES);
-    https_server_.ServeFilesFromDirectory(test_data_dir);
-    EXPECT_TRUE(https_server_.Start());
-    host_resolver()->AddRule("*", "127.0.0.1");
+  if (!parent_widget_) {
+    return;
   }
 
- protected:
-  base::test::ScopedFeatureList feature_list_;
-  net::EmbeddedTestServer https_server_;
-
-  HostContentSettingsMap* content_settings() {
-    return HostContentSettingsMapFactory::GetForProfile(browser()->profile());
+  if (!PreRunCallback().is_null()) {
+    std::move(PreRunCallback()).Run();
   }
 
-  void AllowFingerprinting(std::string domain) {
-    brave_shields::SetFingerprintingControlType(
-        content_settings(), ControlType::ALLOW,
-        https_server_.GetURL(domain, "/"));
+  // width/height don't matter here.
+  menu_runner_->RunMenuAt(parent_widget_.get(), nullptr,
+                          gfx::Rect(point.x(), point.y(), 0, 0),
+                          views::MenuAnchorPosition::kTopLeft, source_type);
+}
+
+void BookmarkContextMenu::AddObserver(BookmarkContextMenuObserver* observer) {
+  observers_.AddObserver(observer);
+}
+
+void BookmarkContextMenu::RemoveObserver(
+    BookmarkContextMenuObserver* observer) {
+  observers_.RemoveObserver(observer);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BookmarkContextMenu, views::MenuDelegate implementation:
+
+void BookmarkContextMenu::ExecuteCommand(int command_id, int event_flags) {
+  controller_->ExecuteCommand(command_id, event_flags);
+}
+
+bool BookmarkContextMenu::IsItemChecked(int command_id) const {
+  return controller_->IsCommandIdChecked(command_id);
+}
+
+bool BookmarkContextMenu::IsCommandEnabled(int command_id) const {
+  return controller_->IsCommandIdEnabled(command_id);
+}
+
+bool BookmarkContextMenu::IsCommandVisible(int command_id) const {
+  return controller_->IsCommandIdVisible(command_id);
+}
+
+bool BookmarkContextMenu::ShouldCloseAllMenusOnExecute(int id) {
+  return (id != IDC_BOOKMARK_BAR_REMOVE) || close_on_remove_;
+}
+
+void BookmarkContextMenu::OnMenuClosed(views::MenuItemView* menu) {
+  observers_.Notify(&BookmarkContextMenuObserver::OnContextMenuClosed);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BookmarkContextMenuControllerDelegate
+// implementation:
+
+void BookmarkContextMenu::CloseMenu() {
+  menu_->Cancel();
+}
+
+void BookmarkContextMenu::WillExecuteCommand(
+    int command_id,
+    const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>&
+        bookmarks) {
+  if (IsRemoveBookmarksCommand(command_id)) {
+    observers_.Notify(&BookmarkContextMenuObserver::WillRemoveBookmarks,
+                      bookmarks);
   }
+}
 
-  void BlockFingerprinting(std::string domain) {
-    brave_shields::SetFingerprintingControlType(
-        content_settings(), ControlType::BLOCK,
-        https_server_.GetURL(domain, "/"));
+void BookmarkContextMenu::DidExecuteCommand(int command_id) {
+  if (IsRemoveBookmarksCommand(command_id)) {
+    observers_.Notify(&BookmarkContextMenuObserver::DidRemoveBookmarks);
   }
-
-  void SetFingerprintingDefault(std::string domain) {
-    brave_shields::SetFingerprintingControlType(
-        content_settings(), ControlType::DEFAULT,
-        https_server_.GetURL(domain, "/"));
-  }
-
-  content::WebContents* contents() {
-    return browser()->tab_strip_model()->GetActiveWebContents();
-  }
-
- private:
-  base::test::ScopedFeatureList scoped_feature_list_;
-};
-
-// Tests results of farbling known values
-IN_PROC_BROWSER_TEST_F(BraveDeviceMemoryFarblingBrowserTest,
-                       FarbleDeviceMemory) {
-  std::string domain1 = "b.test";
-  std::string domain2 = "d.test";
-  GURL url1 = https_server_.GetURL(domain1, "/simple.html");
-  GURL url2 = https_server_.GetURL(domain2, "/simple.html");
-  // set memory to 10GB
-  blink::ApproximatedDeviceMemory::SetPhysicalMemoryMBForTesting(1024 * 10);
-  int true_value =
-      blink::ApproximatedDeviceMemory::GetApproximatedDeviceMemory() * 1024;
-  EXPECT_EQ(true_value, 8192);
-  // Farbling level: off
-  AllowFingerprinting(domain1);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url1));
-  EXPECT_EQ(true_value, EvalJs(contents(), kDeviceMemoryScript));
-  AllowFingerprinting(domain2);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url2));
-  EXPECT_EQ(true_value, EvalJs(contents(), kDeviceMemoryScript));
-
-  // Farbling level: default
-  SetFingerprintingDefault(domain1);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url1));
-  EXPECT_EQ(4096, EvalJs(contents(), kDeviceMemoryScript));
-  SetFingerprintingDefault(domain2);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url2));
-  EXPECT_EQ(512, EvalJs(contents(), kDeviceMemoryScript));
-
-  // Farbling level: maximum
-  BlockFingerprinting(domain1);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url1));
-  EXPECT_EQ(512, EvalJs(contents(), kDeviceMemoryScript));
-  AllowFingerprinting(domain2);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url2));
-  EXPECT_EQ(8192, EvalJs(contents(), kDeviceMemoryScript));
-
-  // Farbling level: default, but webcompat exception enabled
-  SetFingerprintingDefault(domain1);
-  brave_shields::SetWebcompatEnabled(
-      content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_DEVICE_MEMORY,
-      true, url1, nullptr);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url1));
-  EXPECT_EQ(true_value, EvalJs(contents(), kDeviceMemoryScript));
-  SetFingerprintingDefault(domain2);
-  brave_shields::SetWebcompatEnabled(
-      content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_DEVICE_MEMORY,
-      true, url2, nullptr);
-  ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url2));
-  EXPECT_EQ(true_value, EvalJs(contents(), kDeviceMemoryScript));
 }

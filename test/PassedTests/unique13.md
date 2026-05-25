@@ -1,5 +1,4 @@
 
-строки 263- 266
 ### match
 ```
 ...
@@ -14,8 +13,8 @@
  {brave_search::features::kBraveSearchDefaultAPIDailyLimitName, "3"} 
  ,  
  <<< ... 
-{brave_search::features::kBraveSearchDefaultAPITotalLimitName, "10"}
- ...  ) ... } ... } ... 
+{brave_search::features::kBraveSearchDefaultAPITotalLimitName, "10"}});
+... } ... } ... 
 ```
 
 ### patch

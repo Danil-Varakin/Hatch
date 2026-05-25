@@ -41,7 +41,7 @@ def Replace(Patch, SourcePath, OutPath, SearchResult, returnChangeEndIndex=False
 
         while len(SourceContent) > ReplaceIndex + 1 and SourceContent[ReplaceIndex + 1].isspace():
             ReplaceIndex += 1
-        while len(SourceContent) > InsertIndex + 1 and SourceContent[InsertIndex + 1].isspace():
+        while 0  > InsertIndex - 1 and SourceContent[InsertIndex - 1].isspace():
             InsertIndex += 1
 
         Patch = AddingTabs(Patch, CodeNestingLevel)
