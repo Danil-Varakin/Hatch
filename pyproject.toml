@@ -35,15 +35,10 @@ dependencies = [
     "tree-sitter-c-sharp>=0.23.0,<1.0.0",
     "tree-sitter-ruby>=0.23.0,<1.0.0",
     "tree-sitter-php>=0.23.0,<1.0.0",
-    "tree-sitter-swift>=0.23.0,<1.0.0",
-    "tree-sitter-kotlin>=0.23.0,<1.0.0",
     "tree-sitter-bash>=0.23.0,<1.0.0",
     "tree-sitter-html>=0.23.0,<1.0.0",
     "tree-sitter-css>=0.23.0,<1.0.0",
     "tree-sitter-json>=0.23.0,<1.0.0",
-    "tree-sitter-toml>=0.23.0,<1.0.0",
-    "tree-sitter-yaml>=0.23.0,<1.0.0",
-    "tree-sitter-sql>=0.23.0,<1.0.0",
 ]
 
 [project.optional-dependencies]
